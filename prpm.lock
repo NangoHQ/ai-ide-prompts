@@ -41,7 +41,15 @@
       "format": "claude",
       "subtype": "skill",
       "installedPath": ".claude/skills/creating-cursor-rules-skill/SKILL.md"
+    },
+    "@prpm/prpm-json-best-practices-skill": {
+      "version": "1.0.4",
+      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fprpm-json-best-practices-skill/1.0.4.tar.gz",
+      "integrity": "sha256-0aa742715813c956f7847f1a16a71cd08d43fa61cca06562355ad4b64b504b60",
+      "format": "claude",
+      "subtype": "skill",
+      "installedPath": ".claude/skills/prpm-json-best-practices-skill/SKILL.md"
     }
   },
-  "generated": "2025-10-30T08:56:07.669Z"
+  "generated": "2025-10-30T13:14:15.257Z"
 }

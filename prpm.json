@@ -1,15 +1,23 @@
 {
   "name": "nango-ai-ide-prompts",
-  "version": "1.0.0",
+  "license": "MIT",
+  "repository": "https://github.com/NangoHQ/ai-ide-prompts",
   "organization": "nango",
   "packages": [
     {
       "name": "hubspot-nango-integration",
       "version": "1.0.0",
       "description": "Use when writing HubSpot integration code in Nango - HubSpot-specific guidance on Search API for incremental syncs, property name variations, rate limits, and OAuth introspection",
-      "author": "",
       "format": "claude",
       "subtype": "skill",
+      "tags": [
+        "hubspot",
+        "nango",
+        "integration",
+        "api",
+        "oauth",
+        "crm"
+      ],
       "files": [
         ".claude/skills/hubspot-nango-integration/SKILL.md"
       ]
@@ -18,9 +26,15 @@
       "name": "hubspot-nango-integration-rule",
       "version": "1.0.0",
       "description": "HubSpot-specific API patterns and constraints for Nango integrations",
-      "author": "",
       "format": "cursor",
       "subtype": "rule",
+      "tags": [
+        "hubspot",
+        "nango",
+        "integration",
+        "api",
+        "crm"
+      ],
       "files": [
         ".cursor/rules/hubspot-nango-integration.mdc"
       ]
