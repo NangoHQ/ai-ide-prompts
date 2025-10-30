@@ -91,60 +91,98 @@ Group related rules into clear sections:
 - Types in types/ (shared), components/*/types.ts (local)
 ```
 
-## Rule Application Types
+## Rule Anatomy
 
-Cursor supports three types of rules based on when they apply:
+### MDC Format and Metadata
 
-### 1. Always Rules
-**Use when:** Rules should apply to every Agent/Inline Edit interaction
+Cursor rules are written in **MDC (.mdc)** format, which supports YAML frontmatter metadata and markdown content. The metadata controls how and when rules are applied.
 
-```yaml
----
-title: Project Coding Standards
-ruleType: always
----
-```
+### Required YAML Frontmatter
 
-### 2. Auto-Attached Rules
-**Use when:** Rules apply based on file patterns (globs)
+Every Cursor rule MUST start with YAML frontmatter between `---` markers:
 
 ```yaml
 ---
-title: React Component Patterns
-ruleType: auto-attached
-globs:
-  - "**/*.tsx"
-  - "components/**/*.ts"
+description: Brief description of when and how to use this rule
+globs: ["**/*.ts", "**/*.tsx"]
+alwaysApply: false
 ---
 ```
 
-**Common glob patterns:**
-- `**/*.tsx` - All TSX files recursively
-- `src/**/*.test.ts` - All test files in src/
-- `components/**/index.ts` - All index.ts in components/
+### Frontmatter Properties
 
-### 3. Manual Rules
-**Use when:** Rules should only apply when explicitly mentioned via `@ruleName`
+| Property | Type | Required | Description |
+|----------|------|----------|-------------|
+| `description` | string | **Yes** | Brief description of the rule's purpose. Used by AI to decide relevance. Never use placeholders like `---` or empty strings. |
+| `globs` | array | No | File patterns that trigger auto-attachment (e.g., `["**/*.ts"]`). Leave empty or omit if not using Auto Attached type. |
+| `alwaysApply` | boolean | No | If `true`, rule is always included in context. If `false` or omitted, behavior depends on Rule Type. |
 
+### Rule Types
+
+Control how rules are applied using the **type dropdown** in Cursor:
+
+| Rule Type | Description | When to Use |
+|-----------|-------------|-------------|
+| **Always** | Always included in model context | Core project conventions, tech stack, universal patterns that apply everywhere |
+| **Auto Attached** | Included when files matching `globs` pattern are referenced | File-type specific rules (e.g., React components, API routes, test files) |
+| **Agent Requested** | Available to AI, which decides whether to include it based on `description` | Contextual patterns, specialized workflows, optional conventions |
+| **Manual** | Only included when explicitly mentioned using `@ruleName` | Rarely-used patterns, experimental conventions, legacy documentation |
+
+### Examples by Rule Type
+
+**Always Rule** (Core conventions):
 ```yaml
 ---
-title: Complex Architecture Guide
-ruleType: manual
+description: TypeScript and code style conventions for the entire project
+alwaysApply: true
 ---
 ```
 
-**Best for:** Verbose documentation, migration guides, complex procedures that aren't always needed.
-
-### AGENTS.md Format (Alternative)
-
-For simpler rules without frontmatter:
-
-```
-.cursor/
-└── AGENTS.md
+**Auto Attached Rule** (File pattern-specific):
+```yaml
+---
+description: React component patterns and conventions
+globs: ["**/components/**/*.tsx", "**/app/**/*.tsx"]
+alwaysApply: false
+---
 ```
 
-**Use plain markdown** - no frontmatter needed. This file is always included in context. Good for basic project documentation.
+**Agent Requested Rule** (Contextual):
+```yaml
+---
+description: RPC service boilerplate and patterns for creating new RPC endpoints
+globs: []
+alwaysApply: false
+---
+```
+
+**Manual Rule** (Explicit invocation):
+```yaml
+---
+description: Legacy API migration patterns (deprecated, use for reference only)
+globs: []
+alwaysApply: false
+---
+```
+
+### Best Practices for Frontmatter
+
+1. **Description is mandatory** - AI uses this to determine relevance. Be specific:
+   - ❌ Bad: `Backend code`
+   - ✅ Good: `Fastify API route patterns, error handling, and validation using Zod`
+
+2. **Use globs strategically** - Auto-attach to relevant file types:
+   - React components: `["**/*.tsx", "**/*.jsx"]`
+   - API routes: `["**/api/**/*.ts", "**/routes/**/*.ts"]`
+   - Tests: `["**/*.test.ts", "**/*.spec.ts"]`
+
+3. **Avoid always applying everything** - Use `alwaysApply: true` sparingly:
+   - ✅ Good for: Tech stack, core conventions, project structure
+   - ❌ Bad for: Framework-specific patterns, specialized workflows
+
+4. **Make Agent Requested rules discoverable** - Write descriptions that help AI understand when to use:
+   - Include keywords: "boilerplate", "template", "pattern for X"
+   - Mention specific use cases: "when creating new API routes"
 
 ## Required Sections
 
@@ -383,50 +421,98 @@ export async function POST(request: Request) {
 
 ## Best Practices
 
-### Keep Rules Focused (< 500 lines)
-**Official Guideline:** Each rule should be under 500 lines
-**Why:** Rules are included in context, consuming tokens. Focused rules are more effective.
+### Keep Rules Under 500 Lines
 
-### Split into Composable Rules
-Instead of one massive rule, create multiple focused rules:
-- `frontend-patterns.mdc` (React conventions)
-- `backend-patterns.mdc` (API conventions)
-- `testing-patterns.mdc` (Test conventions)
+- Split large rules into multiple, composable files
+- Each rule file should focus on one domain or concern
+- Reference other rule files when needed (e.g., "See `backend-api.mdc` for API patterns")
+- **Why:** Large files become unmanageable and harder for AI to process effectively
 
-### Be Concrete with Examples
-Show, don't tell. Always include code examples:
+### Split Into Composable Rules
 
+Break down by concern rather than creating one monolithic file:
+
+```
+.cursor/rules/
+  ├── tech-stack.mdc          # Core technologies
+  ├── typescript-patterns.mdc # Language-specific patterns
+  ├── api-conventions.mdc     # API route standards
+  ├── component-patterns.mdc  # React/UI patterns
+  └── testing-standards.mdc   # Testing approaches
+```
+
+**Why:** Easier to maintain, update, and reuse across similar projects.
+
+### Provide Concrete Examples or Referenced Files
+
+Instead of vague guidance, always include:
+- Complete, runnable code examples
+- References to actual project files: `See components/auth/LoginForm.tsx for example`
+- Links to internal docs or design system
+- Specific file paths and line numbers when relevant
+
+**❌ BAD - Vague:**
+```markdown
+Use proper error handling in API routes.
+```
+
+**✅ GOOD - Concrete:**
+```markdown
+API routes must use try/catch with typed errors. Example:
 ```typescript
-// ✅ GOOD - Concrete example
-interface User {
-  id: string;
-  name: string;
+// app/api/users/route.ts (lines 10-25)
+export async function POST(request: Request) {
+  try {
+    const data = await request.json();
+    return Response.json({ success: true });
+  } catch (error) {
+    return handleApiError(error); // See lib/errors.ts
+  }
 }
-
-// ❌ BAD - Abstract description
-"Define proper type interfaces"
+```
+See `app/api/products/route.ts` for complete implementation.
 ```
 
-### Use File References
-Reference specific files with `@filename` in prompts to Claude.
+### Write Rules Like Clear Internal Docs
 
-### Make Rules Reusable
-Write rules that work across similar projects, not just one codebase.
+Rules should read like technical documentation, not casual advice:
+- Be precise and unambiguous
+- Include the "why" behind decisions
+- Document exceptions to rules
+- Reference architecture decisions
+- Link to related rules or documentation
 
-### Update with `/Generate Cursor Rules`
-Use Cursor's built-in command to auto-generate rules from existing code, then refine.
+**Think:** "Could a new engineer understand this without asking questions?"
 
-### Nested Rules for Directory Scoping
-Create subdirectory `.cursor/rules` for folder-specific conventions:
+### Reuse Rules When Repeating Prompts
 
-```
-project/
-├── .cursor/rules/
-│   └── general.mdc (applies to whole project)
-├── frontend/
-│   └── .cursor/rules/
-│       └── react.mdc (applies only to frontend/)
-```
+If you find yourself giving the same instructions repeatedly in chat:
+1. Document that pattern in `.cursor/rules/`
+2. Include the specific guidance you keep repeating
+3. Add examples of correct implementation
+4. Update existing rule files rather than creating new ones
+
+**Common scenarios to capture:**
+- "Always use X pattern for Y"
+- "Don't forget to Z when doing W"
+- Corrections you make frequently
+- Patterns specific to your team/codebase
+
+### Keep It Scannable
+
+- Use clear section headers
+- Bold important terms
+- Include code examples (not just prose)
+- Use tables for comparisons
+- Add table of contents for files over 200 lines
+
+### Update Regularly
+
+- Review monthly or after major changes
+- Remove outdated patterns
+- Add new patterns as they emerge
+- Keep examples current with latest framework versions
+- Archive deprecated rules rather than deleting (for reference)
 
 ### Test with AI
 
@@ -437,29 +523,6 @@ After creating rules, test them:
 3. Ask AI: "Refactor this to match our patterns"
 
 Verify AI follows rules correctly. Update rules based on gaps found.
-
-### Consider Rule Precedence
-Rules are applied in order: **Team → Project → User**
-- Team rules (version controlled, shared)
-- Project rules (`.cursor/rules`)
-- User rules (personal overrides)
-
-### Use Manual Rules for Verbose Guides
-Complex procedures, migration guides, or detailed architecture docs should be `ruleType: manual` to avoid consuming context unnecessarily.
-
-### Keep It Scannable
-
-- Use clear section headers
-- Bold important terms
-- Include code examples (not just prose)
-- Use tables for comparisons
-
-### Update Regularly
-
-- Review monthly or after major changes
-- Remove outdated patterns
-- Add new patterns as they emerge
-- Keep examples current with latest framework versions
 
 ## Real-World Example
 
@@ -472,12 +535,6 @@ The PRPM registry `.cursor/rules` demonstrates:
 - Database query patterns
 
 ## Checklist for New Cursor Rules
-
-**Rule Configuration:**
-- [ ] ruleType chosen appropriately (always/auto-attached/manual)
-- [ ] globs patterns added if using auto-attached
-- [ ] Consider AGENTS.md format for simpler rules without frontmatter
-- [ ] Title and description are clear
 
 **Project Context:**
 - [ ] Tech stack clearly defined with versions
@@ -501,7 +558,6 @@ The PRPM registry `.cursor/rules` demonstrates:
 - [ ] Scannable (not wall of text)
 - [ ] Examples are complete and runnable
 - [ ] Anti-patterns included with rationale
-- [ ] Keep under 500 lines for focused rules
 
 **Testing:**
 - [ ] Tested with AI assistant

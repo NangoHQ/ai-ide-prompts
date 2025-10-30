@@ -3,53 +3,53 @@
   "lockfileVersion": 1,
   "packages": {
     "@prpm/creating-skills-skill": {
-      "version": "1.0.0",
-      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fcreating-skills-skill/1.0.0.tar.gz",
-      "integrity": "sha256-d8a651604c461c19662f48ab7235aa04c5b95a41dc4201bbb5bb06751fd2df50",
+      "version": "1.0.2",
+      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fcreating-skills-skill/1.0.2.tar.gz",
+      "integrity": "sha256-c2ccd53ee47857287839168de19a8270dad248599ad96c0b23287933f4cf083c",
       "format": "claude",
       "subtype": "skill",
       "installedPath": ".claude/skills/creating-skills-skill/SKILL.md"
     },
     "@prpm/slash-command-builder-skill": {
-      "version": "1.0.0",
-      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fslash-command-builder-skill/1.0.0.tar.gz",
-      "integrity": "sha256-df553954e1000caecabaf519152d6c7b0c6cc8ebe08025ce6547d00aee4c68fb",
+      "version": "1.0.2",
+      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fslash-command-builder-skill/1.0.2.tar.gz",
+      "integrity": "sha256-c5dd40867736ca5ad298eb977d62ee32354245d389172ed16b237e700d78b1d6",
       "format": "claude",
       "subtype": "skill",
-      "installedPath": ".claude/skills/slash-command-builder-skill/SKILL.md"
+      "installedPath": ".claude/skills/slash-command-builder-skill"
     },
     "@prpm/agent-builder-skill": {
-      "version": "1.0.0",
-      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fagent-builder-skill/1.0.0.tar.gz",
-      "integrity": "sha256-8682d3a5a95eb95d916036d28d194745eb9c1e3089a086dbffe156bb15d51d5e",
+      "version": "1.0.2",
+      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fagent-builder-skill/1.0.2.tar.gz",
+      "integrity": "sha256-6cb3c1a22a781727a4e5b2cdda827b92c4fcaae1feeba1498fe0e96bb355821e",
       "format": "claude",
       "subtype": "skill",
-      "installedPath": ".claude/skills/agent-builder-skill/SKILL.md"
+      "installedPath": ".claude/skills/agent-builder-skill"
     },
     "@prpm/creating-cursor-rules": {
-      "version": "1.0.0",
-      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fcreating-cursor-rules/1.0.0.tar.gz",
-      "integrity": "sha256-1d4377d32d779316d7fdb843735cdc7b470e5eb7f467e62947f2a78a40401f96",
+      "version": "1.0.2",
+      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fcreating-cursor-rules/1.0.2.tar.gz",
+      "integrity": "sha256-b469cf9310f49c35fb9e2d808fa8ba18ea365e1fc87f6d531d109a26d60c4247",
       "format": "cursor",
       "subtype": "rule",
       "installedPath": ".cursor/rules/creating-cursor-rules.mdc"
     },
     "@prpm/creating-cursor-rules-skill": {
-      "version": "1.0.0",
-      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fcreating-cursor-rules-skill/1.0.0.tar.gz",
-      "integrity": "sha256-5194ff841a9c1aa47e25f87ce77d985cec24c1be5377b487af9f2b63ece04e2b",
+      "version": "1.0.2",
+      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fcreating-cursor-rules-skill/1.0.2.tar.gz",
+      "integrity": "sha256-7adac2c9efd00832305cecab09cccaff25db77b835d94c974358b67b15318ec4",
       "format": "claude",
       "subtype": "skill",
       "installedPath": ".claude/skills/creating-cursor-rules-skill/SKILL.md"
     },
     "@prpm/prpm-json-best-practices-skill": {
-      "version": "1.0.4",
-      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fprpm-json-best-practices-skill/1.0.4.tar.gz",
-      "integrity": "sha256-0aa742715813c956f7847f1a16a71cd08d43fa61cca06562355ad4b64b504b60",
+      "version": "1.0.6",
+      "resolved": "http://registry.prpm.dev/api/v1/packages/%40prpm%2Fprpm-json-best-practices-skill/1.0.6.tar.gz",
+      "integrity": "sha256-a214ca2858307bc66dc59435cfc81087d480e6c0ae5240448d52b66e48de97fd",
       "format": "claude",
       "subtype": "skill",
       "installedPath": ".claude/skills/prpm-json-best-practices-skill/SKILL.md"
     }
   },
-  "generated": "2025-10-30T13:14:15.257Z"
+  "generated": "2025-10-30T20:18:35.009Z"
 }
