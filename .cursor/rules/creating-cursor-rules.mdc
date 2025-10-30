@@ -1,0 +1,826 @@
+---
+title: Creating Cursor Rules
+description: Meta-rule for creating effective Cursor IDE rules with best practices, patterns, and examples. Covers project rules, rule types (always/auto-attached/manual), MDC format, and AGENTS.md alternative.
+tags: [meta, cursor, documentation, best-practices, mdc-format]
+---
+
+# Creating Cursor Rules - Meta Rule
+
+## Overview
+
+This is a meta-rule for creating effective `.cursor/rules` files. Apply these principles when writing or improving Cursor IDE rules for your project.
+
+Cursor rules provide "system-level instructions to Agent and Inline Edit" that persist as context, preferences, or workflows. They work by including their contents at the start of the model context for each AI completion.
+
+## Rule Types in Cursor
+
+Cursor supports four distinct rule categories:
+
+### 1. Project Rules
+**Location:** `.cursor/rules/*.mdc`
+- Version-controlled with your codebase
+- Scoped to specific projects
+- Highest priority after Team Rules
+- Can be nested in subdirectories for folder-specific rules
+
+### 2. User Rules
+**Location:** Global settings
+- Applied across all projects
+- Personal preferences
+- Lowest priority
+
+### 3. Team Rules
+**Location:** Cursor dashboard (Team/Enterprise plans)
+- Organization-wide enforcement
+- Managed by administrators
+- Highest priority
+- Can be disabled by users (if not enforced)
+
+### 4. AGENTS.md Alternative
+**Location:** `.cursor/AGENTS.md`
+- Plain markdown (no MDC metadata)
+- Simpler alternative to structured rules
+- Supports nesting in subdirectories
+- More specific versions take precedence
+
+## Rule Application Types
+
+Each project rule has a type determining when it applies:
+
+### Always
+**Use when:** Rules should apply to every Agent/Inline Edit interaction
+
+```yaml
+---
+title: TypeScript Standards
+description: Always apply TypeScript strict mode and naming conventions
+ruleType: always
+---
+```
+
+- Always included in model context
+- Perfect for: coding standards, tech stack, fundamental patterns
+
+### Auto Attached
+**Use when:** Rules apply based on file patterns (globs)
+
+```yaml
+---
+title: React Component Patterns
+description: Applies when working with React component files
+ruleType: auto-attached
+globs:
+  - "**/*.tsx"
+  - "components/**/*.ts"
+---
+```
+
+- Activated when referenced files match glob patterns
+- Perfect for: framework-specific rules, file-type conventions
+- Uses standard glob syntax (`*`, `**`, `?`)
+
+### Manual
+**Use when:** Rules should only apply when explicitly mentioned
+
+```yaml
+---
+title: Database Migration Guide
+description: Detailed migration procedures - use @database-migrations when needed
+ruleType: manual
+---
+```
+
+- Activated via `@ruleName` reference
+- Perfect for: complex procedures, occasional tasks, verbose guides
+
+## When to Use Cursor Rules
+
+**Use Cursor rules when:**
+- Starting a new project and setting up `.cursor/rules`
+- Defining consistent coding standards for teams
+- Converting guidelines to persistent context
+- Framework/library-specific patterns needed
+
+**Don't use for:**
+- Claude Code skills (those go in `.claude/skills/`)
+- One-time instructions (just ask directly)
+- User-specific preferences (use User Rules in settings)
+- Cursor Tab completions (rules don't affect Tab)
+
+## Core Principles
+
+### 1. Be Specific and Actionable
+
+```markdown
+# ❌ BAD - Vague
+Write clean code with good practices.
+
+# ✅ GOOD - Specific
+Use functional components with TypeScript.
+Define prop types with interfaces, not inline types.
+Extract hooks when logic exceeds 10 lines.
+```
+
+### 2. Focus on Decisions, Not Basics
+
+```markdown
+# ❌ BAD - Obvious
+Use semicolons in JavaScript.
+Indent with 2 spaces.
+
+# ✅ GOOD - Decision guidance
+Choose Zustand for global state, React Context for component trees.
+Use Zod for runtime validation at API boundaries only.
+Prefer server components except for: forms, client-only APIs, animations.
+```
+
+### 3. Organize by Concern
+
+```markdown
+# ✅ GOOD Structure
+
+## Tech Stack
+- Next.js 14 with App Router
+- TypeScript strict mode
+- Tailwind CSS for styling
+
+## Code Style
+- Functional components only
+- Named exports (no default exports)
+- Co-locate tests with source files
+
+## Patterns
+- Use React Server Components by default
+- Client components: mark with "use client" directive
+- Error handling: try/catch + toast notification
+
+## Project Conventions
+- API routes in app/api/
+- Components in components/ (flat structure)
+- Types in types/ (shared), components/*/types.ts (local)
+```
+
+## MDC Format and Frontmatter
+
+Cursor project rules use **MDC format** (`.mdc` files) with YAML frontmatter.
+
+### Required YAML Frontmatter
+
+**Every Cursor rule MUST include YAML frontmatter:**
+
+```yaml
+---
+title: Rule Title
+description: Brief description of when and how to use this rule
+tags: [tag1, tag2, tag3]
+ruleType: always  # or auto-attached, manual
+---
+```
+
+### Field Requirements
+
+**title:** (Required)
+- Clear, concise name for the rule
+- Use title case
+- Example: `Creating Cursor Rules`, `TypeScript Type Safety`
+
+**description:** (Required, MANDATORY)
+- Brief description of the rule's purpose and when to use it
+- Should start with context (e.g., "Use when...", "Meta-rule for...")
+- Keep under 200 characters for clarity
+- Example: `Meta-rule for creating effective Cursor IDE rules with best practices, patterns, and examples`
+
+**tags:** (Optional but recommended)
+- Array of relevant tags
+- Use lowercase, kebab-case
+- Include technology, domain, and category tags
+- Example: `[meta, cursor, documentation, best-practices]`
+
+**ruleType:** (Required for application behavior)
+- `always` - Always included in model context
+- `auto-attached` - Applied when glob patterns match
+- `manual` - Only when explicitly referenced with `@ruleName`
+
+### Optional Fields for Auto-Attached Rules
+
+**globs:** (Required for auto-attached rules)
+- Array of glob patterns
+- Activates rule when referenced files match
+- Standard glob syntax: `*`, `**`, `?`
+
+```yaml
+---
+title: React Patterns
+ruleType: auto-attached
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "components/**/*.ts"
+---
+```
+
+### Optional Metadata Fields
+
+**source:** (Optional)
+- Where the rule originated from
+- Example: `official-docs`, `team-convention`, `community`
+
+**alwaysApply:** (Deprecated, use ruleType instead)
+- Legacy field, prefer `ruleType: always`
+
+**IMPORTANT:** The `description` field is MANDATORY for all cursor rules. When converting skills to cursor rules or creating new rules, always include a valid description. Never use placeholders like `---` or empty strings.
+
+## AGENTS.md Alternative
+
+For simpler projects, use `.cursor/AGENTS.md` instead of `.mdc` files:
+
+```markdown
+# Project Context
+
+We use Next.js 14 with TypeScript in strict mode.
+
+## Coding Standards
+
+- Functional components only
+- Named exports (no default)
+- Co-locate tests with source files
+
+## Patterns
+
+### Error Handling
+```typescript
+try {
+  // operation
+} catch (error) {
+  toast.error(error.message)
+}
+```
+```
+
+**Advantages:**
+- No frontmatter required
+- Simpler markdown format
+- Still version-controlled
+- Supports nesting in subdirectories
+
+**When to use AGENTS.md:**
+- Small projects (< 5 rules worth of content)
+- Simple conventions
+- No need for rule type granularity
+
+**When to use .mdc files:**
+- Multiple rules needed
+- Want auto-attached/manual rules
+- Complex rule organization
+- Team environments
+
+## Required Sections
+
+### Tech Stack Declaration
+
+```markdown
+## Tech Stack
+- Framework: Next.js 14
+- Language: TypeScript 5.x (strict mode)
+- Styling: Tailwind CSS 3.x
+- State: Zustand
+- Database: PostgreSQL + Prisma
+- Testing: Vitest + Playwright
+```
+
+**Why:** Prevents AI from suggesting wrong tools/patterns.
+
+### Code Style Guidelines
+
+```markdown
+## Code Style
+- **Components**: Functional with TypeScript
+- **Props**: Interface definitions, destructure in params
+- **Hooks**: Extract when logic > 10 lines
+- **Exports**: Named exports only (no default)
+- **File naming**: kebab-case.tsx
+```
+
+### Common Patterns
+
+```markdown
+## Patterns
+
+### Error Handling
+```typescript
+try {
+  const result = await operation();
+  toast.success('Operation completed');
+  return result;
+} catch (error) {
+  const message = error instanceof Error ? error.message : 'Unknown error';
+  toast.error(message);
+  throw error; // Re-throw for caller to handle
+}
+```
+
+### API Route Structure
+```typescript
+// app/api/users/route.ts
+export async function GET(request: Request) {
+  try {
+    // 1. Parse/validate input
+    // 2. Check auth/permissions
+    // 3. Perform operation
+    // 4. Return Response
+  } catch (error) {
+    return new Response(JSON.stringify({ error: 'Message' }), {
+      status: 500
+    });
+  }
+}
+```
+```
+
+### What NOT to Include
+
+```markdown
+# ❌ AVOID - Too obvious
+- Write readable code
+- Use meaningful variable names
+- Add comments when necessary
+- Follow best practices
+
+# ❌ AVOID - Too restrictive
+- Never use any third-party libraries
+- Always write everything from scratch
+- Every function must be under 5 lines
+
+# ❌ AVOID - Language-agnostic advice
+- Use design patterns
+- Think before you code
+- Test your code
+```
+
+## Structure Template
+
+```markdown
+# Project Name - Cursor Rules
+
+## Tech Stack
+[List all major technologies]
+
+## Code Style
+[Specific style decisions]
+
+## Project Structure
+[Directory organization]
+
+## Patterns
+[Common patterns with code examples]
+
+### Pattern Name
+[Description]
+```code example```
+
+## Conventions
+[Project-specific conventions]
+
+## Common Tasks
+[Frequent operations with snippets]
+
+### Task Name
+```
+step 1
+step 2
+```
+
+## Anti-Patterns
+[What to avoid and why]
+
+## Testing
+[Testing approach and patterns]
+```
+
+## Example Sections
+
+### Tech Stack Section
+
+```markdown
+## Tech Stack
+
+**Framework:** Next.js 14 (App Router)
+**Language:** TypeScript 5.x (strict mode enabled)
+**Styling:** Tailwind CSS 3.x with custom design system
+**State:** Zustand for global, React Context for component trees
+**Forms:** React Hook Form + Zod validation
+**Database:** PostgreSQL with Prisma ORM
+**Testing:** Vitest (unit), Playwright (E2E)
+**Deployment:** Vercel
+
+**Key Dependencies:**
+- `@tanstack/react-query` for server state
+- `date-fns` for date manipulation (not moment.js)
+- `clsx` + `tailwind-merge` for conditional classes
+```
+
+### Patterns Section with Code
+
+```markdown
+## Patterns
+
+### Server Component Data Fetching
+
+```typescript
+// app/users/page.tsx
+import { prisma } from '@/lib/prisma';
+
+export default async function UsersPage() {
+  // Fetch directly in server component
+  const users = await prisma.user.findMany({
+    select: {
+      id: true,
+      name: true,
+      email: true
+    }
+  });
+
+  return <UserList users={users} />;
+}
+```
+
+### Client Component with State
+
+```typescript
+'use client';
+
+import { useState } from 'react';
+import { toast } from 'sonner';
+
+interface FormProps {
+  onSubmit: (data: FormData) => Promise<void>;
+}
+
+export function Form({ onSubmit }: FormProps) {
+  const [loading, setLoading] = useState(false);
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      await onSubmit(new FormData(e.target as HTMLFormElement));
+      toast.success('Saved successfully');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to save';
+      toast.error(message);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      {/* form fields */}
+      <button disabled={loading}>
+        {loading ? 'Saving...' : 'Save'}
+      </button>
+    </form>
+  );
+}
+```
+```
+
+### Anti-Patterns Section
+
+```markdown
+## Anti-Patterns
+
+### ❌ Don't: Default Exports
+```typescript
+// ❌ BAD
+export default function Button() { }
+
+// ✅ GOOD
+export function Button() { }
+```
+
+**Why:** Named exports are more refactor-friendly and enable better tree-shaking.
+
+### ❌ Don't: Inline Type Definitions
+```typescript
+// ❌ BAD
+function UserCard({ user }: { user: { name: string; email: string } }) { }
+
+// ✅ GOOD
+interface User {
+  name: string;
+  email: string;
+}
+
+function UserCard({ user }: { user: User }) { }
+```
+
+**Why:** Reusability and discoverability.
+
+### ❌ Don't: Client Components for Static Content
+```typescript
+// ❌ BAD
+'use client';
+export function StaticContent() {
+  return <div>Static text</div>;
+}
+
+// ✅ GOOD - Server component by default
+export function StaticContent() {
+  return <div>Static text</div>;
+}
+```
+
+**Why:** Server components are faster and reduce bundle size.
+```
+
+## Common Tasks
+
+Include shortcuts for frequent operations:
+
+```markdown
+## Common Tasks
+
+### Adding a New API Route
+
+1. Create `app/api/[route]/route.ts`
+2. Define HTTP method exports (GET, POST, etc.)
+3. Validate input with Zod schema
+4. Use try/catch for error handling
+5. Return `Response` object
+
+```typescript
+import { z } from 'zod';
+
+const schema = z.object({
+  name: z.string().min(1)
+});
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const data = schema.parse(body);
+
+    // Process...
+
+    return Response.json({ success: true });
+  } catch (error) {
+    if (error instanceof z.ZodError) {
+      return Response.json(
+        { error: error.errors },
+        { status: 400 }
+      );
+    }
+    return Response.json(
+      { error: 'Internal error' },
+      { status: 500 }
+    );
+  }
+}
+```
+
+### Adding a New Component
+
+1. Create `components/component-name.tsx`
+2. Define props interface
+3. Export as named export
+4. Co-locate test if complex logic
+
+```typescript
+// components/user-card.tsx
+interface UserCardProps {
+  name: string;
+  email: string;
+  onEdit?: () => void;
+}
+
+export function UserCard({ name, email, onEdit }: UserCardProps) {
+  return (
+    <div className="rounded-lg border p-4">
+      <h3 className="font-semibold">{name}</h3>
+      <p className="text-sm text-gray-600">{email}</p>
+      {onEdit && (
+        <button onClick={onEdit}>Edit</button>
+      )}
+    </div>
+  );
+}
+```
+```
+
+## Best Practices from Official Cursor Docs
+
+### 1. Keep Rules Focused (< 500 lines)
+
+**Guideline:** Each rule should be under 500 lines
+
+**Why:** Rules are included in context, consuming tokens. Focused rules are more effective.
+
+```yaml
+# ❌ BAD - One massive rule with everything
+---
+title: All Project Rules
+---
+[5000 lines of every convention]
+
+# ✅ GOOD - Multiple focused rules
+---
+title: TypeScript Standards
+ruleType: always
+---
+[200 lines of TypeScript conventions]
+
+---
+title: React Patterns
+ruleType: auto-attached
+globs: ["**/*.tsx"]
+---
+[300 lines of React-specific patterns]
+```
+
+### 2. Split Into Composable Rules
+
+**Guideline:** Create single-purpose, reusable rules
+
+```
+.cursor/rules/
+├── tech-stack.mdc (always)
+├── typescript.mdc (always)
+├── react-patterns.mdc (auto-attached: **/*.tsx)
+├── api-routes.mdc (auto-attached: **/api/**/*.ts)
+└── testing.mdc (auto-attached: **/*.test.ts)
+```
+
+**Why:** Modular rules are easier to maintain and combine effectively.
+
+### 3. Be Concrete with Examples
+
+**Guideline:** Use specific examples or file references
+
+```markdown
+# ❌ VAGUE
+Use proper error handling
+
+# ✅ CONCRETE
+Error handling pattern (see @lib/error-handler.ts for implementation):
+```typescript
+try {
+  const result = await operation()
+  return { success: true, data: result }
+} catch (error) {
+  logger.error('Operation failed', { error })
+  return { success: false, error: formatError(error) }
+}
+```
+```
+
+**Why:** AI needs concrete patterns to follow, not abstract advice.
+
+### 4. Use File References
+
+**Guideline:** Reference actual project files with `@filename`
+
+```markdown
+## Authentication Pattern
+
+See @lib/auth/session.ts for the current implementation.
+
+For API routes, follow the pattern in @app/api/users/route.ts.
+```
+
+**Why:** AI can read referenced files for context, ensuring consistency.
+
+### 5. Make Rules Reusable
+
+**Guideline:** Write rules that apply to multiple situations
+
+```markdown
+# ❌ TOO SPECIFIC
+When creating the UserProfile component, use useState
+
+# ✅ REUSABLE
+All React components should:
+- Use functional components with hooks
+- Define prop interfaces above the component
+- Handle loading/error states explicitly
+```
+
+**Why:** Reusable rules provide value across many conversations.
+
+### 6. Update Regularly
+
+**Guideline:** Review and update rules as your project evolves
+
+- Review monthly or after major architectural changes
+- Remove outdated patterns
+- Add new patterns as they emerge
+- Update examples to match current code
+
+**Use `/Generate Cursor Rules` command** to convert recent chat decisions into rules automatically.
+
+### 7. Nested Rules for Directory Scoping
+
+**Guideline:** Use subdirectory `.cursor/rules` for folder-specific conventions
+
+```
+project/
+├── .cursor/rules/
+│   └── general.mdc (applies to whole project)
+├── frontend/
+│   └── .cursor/rules/
+│       └── react.mdc (applies only to frontend/)
+└── backend/
+    └── .cursor/rules/
+        └── fastify.mdc (applies only to backend/)
+```
+
+**Why:** Different parts of monorepos often need different conventions.
+
+### 8. Test with AI
+
+Ask AI to:
+1. "Create a new API route following our conventions"
+2. "Add error handling to this component"
+3. "Refactor this to match our patterns"
+
+Verify it follows your rules correctly. If not, refine the rules for clarity.
+
+### 9. Consider Rule Precedence
+
+**Order:** Team Rules → Project Rules → User Rules
+
+- Team Rules (if using Team/Enterprise): Highest priority, can be enforced
+- Project Rules (`.cursor/rules/*.mdc`): Middle priority, version-controlled
+- User Rules (global settings): Lowest priority, personal preferences
+
+**Nested directories:** More specific (deeper) rules take precedence over parent directory rules.
+
+### 10. Use Manual Rules for Verbose Guides
+
+**Guideline:** Complex procedures should be manual rules
+
+```yaml
+---
+title: Database Migration Procedure
+ruleType: manual
+---
+
+# Complete Database Migration Guide
+
+[Detailed 1000-line guide...]
+```
+
+**Why:** Verbose content should only load when explicitly needed via `@database-migration`, saving context for always/auto-attached rules.
+
+## Real-World Example
+
+See the PRPM registry `.cursor/rules` for a complete example:
+- Clear tech stack declaration
+- Specific TypeScript patterns
+- Fastify-specific conventions
+- Error handling standards
+- API route patterns
+
+## Checklist for New Cursor Rules
+
+**YAML Frontmatter:**
+- [ ] Title field present and descriptive
+- [ ] Description field present (MANDATORY - never empty or `---`)
+- [ ] Tags array includes relevant categories
+- [ ] ruleType chosen appropriately (always/auto-attached/manual)
+- [ ] globs patterns added if using auto-attached
+- [ ] Optional fields (alwaysApply, source) added if applicable
+- [ ] Consider AGENTS.md format for simpler rules without frontmatter
+
+**Project Context:**
+- [ ] Tech stack clearly defined
+- [ ] Version numbers specified
+- [ ] Key dependencies listed
+
+**Code Style:**
+- [ ] Component style specified (functional/class)
+- [ ] Export style (named/default)
+- [ ] File naming convention
+- [ ] Specific to project (not generic)
+
+**Patterns:**
+- [ ] At least 3 code examples
+- [ ] Cover most common tasks
+- [ ] Include error handling pattern
+- [ ] Show project-specific conventions
+
+**Organization:**
+- [ ] Logical section headers
+- [ ] Scannable (not wall of text)
+- [ ] Examples are complete and runnable
+- [ ] Anti-patterns included
+
+**Testing:**
+- [ ] Tested with AI assistant
+- [ ] AI follows conventions correctly
+- [ ] Updated after catching mistakes
+
+---
+
+**Remember:** Cursor rules are living documents. Update them as your project evolves and patterns emerge.

@@ -1,0 +1,777 @@
+---
+description: HubSpot-specific API patterns and constraints for Nango integrations
+globs:
+  - "**/hubspot/**/*.ts"
+  - "**/hubspot/**/*.tsx"
+  - "**/*hubspot*.ts"
+  - "**/*hubspot*.tsx"
+alwaysApply: false
+---
+
+# HubSpot Integration Rules
+
+Apply when writing HubSpot integrations in Nango. Focuses exclusively on HubSpot API quirks and Nango patterns.
+
+## Decision Flow: Which API Pattern to Use?
+
+**Start here when implementing any HubSpot sync:**
+
+```
+Need to filter by date/modified time?
+├─ YES → Use Search API (/crm/v3/objects/{object}/search)
+│         Rate limit: 4 req/sec
+│         Method: POST
+│         Properties format: Array
+│
+└─ NO → Full sync or CRUD operation?
+   ├─ Full sync → Use standard GET (/crm/v3/objects/{object})
+   │              Rate limit: 190/10s
+   │              Properties format: Comma string
+   │
+   └─ CRUD → Use standard POST/PATCH/DELETE (/crm/v3/objects/{object})
+             Rate limit: 190/10s
+```
+
+## Quick Reference Tables
+
+### Endpoint Selection by Use Case
+| Use Case | Endpoint | Method | Rate Limit | When to Use |
+|----------|----------|--------|------------|-------------|
+| Full sync | `/crm/v3/objects/{object}` | GET | 190/10s | Initial data fetch, no filtering needed |
+| Incremental sync | `/crm/v3/objects/{object}/search` | POST | 4/sec | **Required** for filtering by last modified date |
+| Actions (CRUD) | `/crm/v3/objects/{object}` | POST/PATCH/DELETE | 190/10s | Create, update, delete operations |
+| Schema introspection | `/crm-object-schemas/v3/schemas` | GET | 190/10s | Discover custom fields and associations |
+
+### Property Format by Context
+| API Context | Property Format | Example |
+|-------------|-----------------|---------|
+| Standard GET params | Comma-separated string | `properties: 'firstname,lastname,email'` |
+| Search API body | Array | `properties: ['firstname', 'lastname', 'email']` |
+| Create/Update body | Nested in `properties` object | `{ properties: { firstname: 'John' } }` |
+
+### Critical Property Names
+| Object | Last Modified Property | Notes |
+|--------|------------------------|-------|
+| Contacts | `lastmodifieddate` | Different from all other objects |
+| Companies, Deals, Tickets, etc. | `hs_lastmodifieddate` | Standard for most objects |
+
+### Object Type IDs
+```
+0-1=Contact  0-2=Company  0-3=Deal  0-5=Ticket
+0-7=Product  0-8=LineItem 0-136=Lead  owner=Owner
+```
+
+## Critical Constraints
+
+### Incremental Syncs MUST Use Search API
+
+**Why:** Search API is the only HubSpot endpoint supporting `hs_lastmodifieddate` filtering.
+
+**Trade-off:** Search API rate limit is 4 req/sec vs standard 190/10s.
+
+```typescript
+// ✅ Correct - incremental sync
+const payload = {
+  endpoint: '/crm/v3/objects/contacts/search',  // Search API
+  data: {
+    filterGroups: [{
+      filters: [{
+        propertyName: 'lastmodifieddate',  // Contacts use 'lastmodifieddate'
+        operator: 'GT',
+        value: Date.parse(lastSyncDate)    // UNIX milliseconds
+      }]
+    }],
+    properties: ['firstname', 'lastname'],  // Array format
+    limit: '100'
+  }
+};
+
+// ❌ Wrong - standard endpoint doesn't support date filtering
+const config = {
+  endpoint: '/crm/v3/objects/contacts',
+  params: {
+    lastmodifieddate: lastSyncDate  // Not supported
+  }
+};
+```
+
+### Property Naming Conventions
+
+HubSpot uses lowercase, underscore-separated property names:
+
+```typescript
+✅ 'firstname', 'lastname', 'hubspot_owner_id'
+❌ 'firstName', 'lastName', 'hubspotOwnerId'
+```
+
+### Data Format Requirements
+
+**Timestamps:** UNIX milliseconds (not seconds)
+```typescript
+✅ const timestamp = Date.parse(lastSyncDate);
+✅ const timestamp = new Date('2025-01-01').getTime();
+❌ const timestamp = Math.floor(Date.now() / 1000);
+```
+
+**Create/Update requests:** Properties must be wrapped
+```typescript
+✅ { properties: { firstname: 'John', lastname: 'Doe' } }
+❌ { firstname: 'John', lastname: 'Doe' }
+```
+
+### Search API Limitations
+
+- Maximum 10,000 results per search query
+- Maximum 5 filter groups
+- Maximum 25 total filters across all groups
+- Maximum 10 filters per group
+- Pagination via `paging.next.after` cursor only
+
+## Schema Introspection Pattern
+
+### Two-Phase Sync Architecture
+
+**Phase 1: Schema Discovery** (run once or infrequently)
+1. Fetch schemas from `/crm-object-schemas/v3/schemas/{objectTypeId}`
+2. Extract all property names (includes custom fields)
+3. Extract association definitions
+4. Cache in metadata
+
+**Phase 2: Data Sync** (run regularly)
+1. Load property names from cached schema
+2. Fetch records with all properties (handles custom fields automatically)
+3. Include associations from schema
+
+Required scope: `crm.schemas.custom.read`
+
+### Custom Fields Pattern
+
+**Never hardcode property lists.** Always derive from schema:
+
+```typescript
+// ❌ Wrong - hardcoded properties
+const properties = ['firstname', 'lastname', 'email'];
+
+// ✅ Correct - dynamic from schema
+const schema = await nango.get({
+  endpoint: `/crm-object-schemas/v3/schemas/${objectId}`
+});
+const properties = schema.data.properties.map(p => p.name);
+// Automatically includes: ['firstname', 'lastname', 'email', 'custom_field_1', 'department', ...]
+```
+
+### Property Chunking (50+ Properties)
+
+HubSpot has URL length limits. For objects with many custom fields, chunk into groups of 50:
+
+```typescript
+const chunks = chunkArray(properties, 50);
+const recordMap = new Map();
+
+for (const chunk of chunks) {
+  const response = await nango.get({
+    endpoint: `/crm/v3/objects/contacts`,
+    params: {
+      properties: chunk.join(','),
+      after: cursor
+    }
+  });
+
+  // Merge properties from multiple requests by record ID
+  for (const record of response.data.results) {
+    const existing = recordMap.get(record.id);
+    recordMap.set(record.id, existing
+      ? { ...existing, properties: { ...existing.properties, ...record.properties } }
+      : record
+    );
+  }
+}
+
+// Use merged records
+const records = Array.from(recordMap.values());
+```
+
+### Association Handling
+
+Associations link objects (Contact → Company, Deal → Contact, etc.)
+
+```typescript
+// 1. Extract from schema
+const associations = schema.associations
+  .filter(a => a.fromObjectTypeId === objectId)
+  .map(a => a.toObjectTypeId);
+
+// 2. Include in API request
+const response = await nango.get({
+  endpoint: `/crm/v3/objects/contacts`,
+  params: {
+    properties: properties.join(','),
+    associations: associations.join(',')  // HubSpot includes in response
+  }
+});
+
+// 3. Access in response
+const contact = response.data.results[0];
+const companyIds = contact.associations?.companies?.results.map(c => c.id);
+```
+
+Association types:
+- `HUBSPOT_DEFINED`: Built-in (Contact ↔ Company)
+- `USER_DEFINED`: Custom (Custom Object ↔ Contact)
+
+### Owner Fields
+
+`hubspot_owner_id` and `hs_owner_id` reference the `owner` object:
+
+```typescript
+// Treat as foreign key, not simple property
+if (['hubspot_owner_id', 'hs_owner_id'].includes(property.name)) {
+  field.type = 'lookup';
+  field.externalLinkTargetTable = 'owner';  // References owner object (ID: 'owner')
+}
+```
+
+## Implementation Examples
+
+### Full Sync Pattern
+
+```typescript
+import { createSync } from 'nango';
+
+const sync = createSync({
+  syncType: 'full',
+  scopes: ['crm.objects.contacts.read'],
+
+  exec: async (nango) => {
+    const config = {
+      endpoint: '/crm/v3/objects/contacts',
+      params: { properties: properties.join(',') },
+      paginate: {
+        type: 'cursor',
+        cursor_path_in_response: 'paging.next.after',
+        limit_name_in_request: 'limit',
+        cursor_name_in_request: 'after',
+        response_path: 'results',
+        limit: 100
+      }
+    };
+
+    for await (const contacts of nango.paginate(config)) {
+      await nango.batchSave(contacts, 'Contact');
+    }
+
+    await nango.deleteRecordsFromPreviousExecutions('Contact');
+  }
+});
+```
+
+### Incremental Sync Pattern
+
+```typescript
+import { createSync } from 'nango';
+
+const sync = createSync({
+  syncType: 'incremental',
+  scopes: ['crm.objects.tickets.read'],
+
+  exec: async (nango) => {
+    const queryDate = nango.lastSyncDate
+      ? Date.parse(nango.lastSyncDate.toISOString().slice(0, -8).replace('T', ' '))
+      : Date.now() - 86400000;
+
+    let after = null;
+    while (true) {
+      const response = await nango.post({
+        endpoint: '/crm/v3/objects/tickets/search',  // Search API
+        data: {
+          sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'DESCENDING' }],
+          properties: PROPERTIES,
+          filterGroups: [{
+            filters: [{
+              propertyName: 'hs_lastmodifieddate',  // Not 'lastmodifieddate' for tickets
+              operator: 'GT',
+              value: queryDate
+            }]
+          }],
+          limit: '100',
+          after
+        }
+      });
+
+      const tickets = response.data.results;
+      if (tickets.length > 0) {
+        await nango.batchSave(tickets, 'Ticket');
+      }
+
+      if (response.data.paging?.next?.after) {
+        after = response.data.paging.next.after;
+      } else {
+        break;
+      }
+    }
+  }
+});
+```
+
+### Actions Pattern
+
+```typescript
+import { createAction } from 'nango';
+
+const action = createAction({
+  scopes: ['crm.objects.contacts.write'],
+
+  exec: async (nango, input) => {
+    const response = await nango.post({
+      endpoint: 'crm/v3/objects/contacts',  // Standard endpoint (NOT /search)
+      data: {
+        properties: {  // Wrapped in properties object
+          firstname: input.firstName,
+          lastname: input.lastName,
+          email: input.email
+        }
+      }
+    });
+
+    return response.data;  // { id, properties: {...}, createdAt, updatedAt }
+  }
+});
+```
+
+## Common Tasks
+
+### Task 1: Implementing a New Object Sync
+
+**Complete workflow with schema introspection:**
+
+```typescript
+import { createSync } from 'nango';
+
+interface HubSpotRecord {
+  id: string;
+  properties: Record<string, any>;
+  associations?: Record<string, { results: Array<{ id: string }> }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const sync = createSync({
+  syncType: 'incremental',
+  scopes: ['crm.objects.deals.read', 'crm.schemas.custom.read'],
+
+  exec: async (nango) => {
+    // Step 1: Fetch schema to get all properties (including custom fields)
+    const schemaResponse = await nango.get({
+      endpoint: '/crm-object-schemas/v3/schemas/0-3' // 0-3 = Deal
+    });
+
+    const properties = schemaResponse.data.properties.map(p => p.name);
+    const associations = schemaResponse.data.associations
+      .filter(a => a.fromObjectTypeId === '0-3')
+      .map(a => a.toObjectTypeId);
+
+    // Step 2: Determine query date
+    const queryDate = nango.lastSyncDate
+      ? Date.parse(nango.lastSyncDate.toISOString().slice(0, -8).replace('T', ' '))
+      : Date.now() - 86400000;
+
+    // Step 3: Fetch data using Search API (for date filtering)
+    let after = null;
+    while (true) {
+      const response = await nango.post({
+        endpoint: '/crm/v3/objects/deals/search',
+        data: {
+          sorts: [{ propertyName: 'hs_lastmodifieddate', direction: 'DESCENDING' }],
+          properties: properties, // Array format for Search API
+          filterGroups: [{
+            filters: [{
+              propertyName: 'hs_lastmodifieddate', // NOT lastmodifieddate (that's only for contacts)
+              operator: 'GT',
+              value: queryDate
+            }]
+          }],
+          limit: '100',
+          after
+        }
+      });
+
+      const deals = response.data.results as HubSpotRecord[];
+
+      if (deals.length > 0) {
+        await nango.batchSave(deals, 'Deal');
+      }
+
+      if (response.data.paging?.next?.after) {
+        after = response.data.paging.next.after;
+      } else {
+        break;
+      }
+    }
+  }
+});
+```
+
+### Task 2: Handling Objects with 50+ Properties
+
+**When schema introspection returns many custom fields:**
+
+```typescript
+function chunkArray<T>(array: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let i = 0; i < array.length; i += size) {
+    chunks.push(array.slice(i, i + size));
+  }
+  return chunks;
+}
+
+const sync = createSync({
+  syncType: 'full',
+  scopes: ['crm.objects.contacts.read', 'crm.schemas.custom.read'],
+
+  exec: async (nango) => {
+    // Fetch schema
+    const schemaResponse = await nango.get({
+      endpoint: '/crm-object-schemas/v3/schemas/0-1'
+    });
+    const properties = schemaResponse.data.properties.map(p => p.name);
+
+    // If 50+ properties, chunk them
+    const propertyChunks = chunkArray(properties, 50);
+
+    let cursor = null;
+    const allRecords = new Map<string, HubSpotRecord>();
+
+    do {
+      // Fetch each chunk and merge by record ID
+      for (const chunk of propertyChunks) {
+        const response = await nango.get({
+          endpoint: '/crm/v3/objects/contacts',
+          params: {
+            properties: chunk.join(','), // Comma format for standard GET
+            limit: '100',
+            after: cursor
+          }
+        });
+
+        for (const record of response.data.results) {
+          const existing = allRecords.get(record.id);
+          if (existing) {
+            // Merge properties from multiple chunk requests
+            existing.properties = {
+              ...existing.properties,
+              ...record.properties
+            };
+          } else {
+            allRecords.set(record.id, record);
+          }
+        }
+
+        // Only get cursor from first chunk request
+        if (chunk === propertyChunks[0]) {
+          cursor = response.data.paging?.next?.after || null;
+        }
+      }
+
+      // Save merged records
+      const records = Array.from(allRecords.values());
+      if (records.length > 0) {
+        await nango.batchSave(records, 'Contact');
+      }
+
+      allRecords.clear(); // Clear for next page
+    } while (cursor);
+
+    await nango.deleteRecordsFromPreviousExecutions('Contact');
+  }
+});
+```
+
+### Task 3: Creating/Updating Records (Actions)
+
+**Standard CRUD pattern:**
+
+```typescript
+import { createAction } from 'nango';
+
+// CREATE
+const createContact = createAction({
+  scopes: ['crm.objects.contacts.write'],
+
+  exec: async (nango, input: { firstName: string; lastName: string; email: string }) => {
+    const response = await nango.post({
+      endpoint: '/crm/v3/objects/contacts', // Standard endpoint (NOT /search)
+      data: {
+        properties: { // MUST wrap in properties object
+          firstname: input.firstName, // lowercase property names
+          lastname: input.lastName,
+          email: input.email
+        }
+      }
+    });
+
+    return response.data;
+  }
+});
+
+// UPDATE
+const updateContact = createAction({
+  scopes: ['crm.objects.contacts.write'],
+
+  exec: async (nango, input: { contactId: string; updates: Record<string, any> }) => {
+    const response = await nango.patch({
+      endpoint: `/crm/v3/objects/contacts/${input.contactId}`,
+      data: {
+        properties: input.updates // Wrap in properties
+      }
+    });
+
+    return response.data;
+  }
+});
+
+// DELETE
+const deleteContact = createAction({
+  scopes: ['crm.objects.contacts.write'],
+
+  exec: async (nango, input: { contactId: string }) => {
+    await nango.delete({
+      endpoint: `/crm/v3/objects/contacts/${input.contactId}`
+    });
+
+    return { success: true };
+  }
+});
+```
+
+### Task 4: Determining Correct Property Name for Filtering
+
+**Use this logic to avoid the lastmodifieddate vs hs_lastmodifieddate confusion:**
+
+```typescript
+function getLastModifiedProperty(objectType: string): string {
+  // Contacts are the ONLY object using 'lastmodifieddate'
+  if (objectType === 'contacts' || objectType === '0-1') {
+    return 'lastmodifieddate';
+  }
+
+  // All other objects use 'hs_lastmodifieddate'
+  return 'hs_lastmodifieddate';
+}
+
+// Usage in sync
+const sync = createSync({
+  exec: async (nango) => {
+    const objectType = 'deals'; // or 'contacts', 'tickets', etc.
+    const modifiedProperty = getLastModifiedProperty(objectType);
+
+    const response = await nango.post({
+      endpoint: `/crm/v3/objects/${objectType}/search`,
+      data: {
+        filterGroups: [{
+          filters: [{
+            propertyName: modifiedProperty, // Correct property name
+            operator: 'GT',
+            value: queryDate
+          }]
+        }]
+      }
+    });
+  }
+});
+```
+
+### Task 5: Testing HubSpot Integrations Locally
+
+**Use Nango CLI to test syncs:**
+
+```bash
+# Install Nango CLI
+npm install -g nango
+
+# Start local Nango instance
+nango dev
+
+# Test a sync
+nango sync run hubspot-contacts --connection-id test-connection
+
+# Dry run (don't save to database)
+nango sync run hubspot-contacts --connection-id test-connection --dry-run
+
+# View logs
+nango sync logs hubspot-contacts --connection-id test-connection
+```
+
+**Mock HubSpot responses in tests:**
+
+```typescript
+import { describe, it, expect, vi } from 'vitest';
+
+describe('HubSpot Contact Sync', () => {
+  it('should handle contacts with lastmodifieddate filter', async () => {
+    const mockNango = {
+      post: vi.fn().mockResolvedValue({
+        data: {
+          results: [
+            { id: '1', properties: { firstname: 'John', lastname: 'Doe' } }
+          ],
+          paging: null
+        }
+      }),
+      batchSave: vi.fn()
+    };
+
+    await sync.exec(mockNango as any);
+
+    // Verify correct property name used
+    expect(mockNango.post).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          filterGroups: [{
+            filters: [{
+              propertyName: 'lastmodifieddate', // NOT hs_lastmodifieddate
+              operator: 'GT',
+              value: expect.any(Number)
+            }]
+          }]
+        })
+      })
+    );
+  });
+});
+```
+
+## Debugging Guide
+
+### Issue: "Property not found" error
+
+**Cause:** Using incorrect property name (camelCase vs lowercase, or wrong modified property)
+
+**Solution:**
+1. Fetch schema to verify property exists:
+   ```bash
+   curl -H "Authorization: Bearer YOUR_TOKEN" \
+     https://api.hubapi.com/crm-object-schemas/v3/schemas/0-1
+   ```
+2. Check property name is lowercase: `firstname` not `firstName`
+3. For date filtering, use correct property:
+   - Contacts: `lastmodifieddate`
+   - Others: `hs_lastmodifieddate`
+
+### Issue: "URL too long" error
+
+**Cause:** Too many properties in URL params (50+ custom fields)
+
+**Solution:** Use property chunking pattern (see Task 2 above)
+
+### Issue: Rate limit exceeded (429 error)
+
+**Cause:** Hitting 4 req/sec limit on Search API
+
+**Solution:**
+```typescript
+// Add rate limiting
+import { setTimeout } from 'timers/promises';
+
+async function rateLimitedRequest(nango, config) {
+  const response = await nango.post(config);
+  await setTimeout(250); // 4 req/sec = 250ms between requests
+  return response;
+}
+```
+
+### Issue: Empty results despite data existing
+
+**Cause:** Using wrong timestamp format (seconds vs milliseconds)
+
+**Solution:**
+```typescript
+// ✅ CORRECT - milliseconds
+const timestamp = Date.parse('2025-01-01'); // 1735689600000
+const timestamp = new Date('2025-01-01').getTime(); // 1735689600000
+
+// ❌ WRONG - seconds
+const timestamp = Math.floor(Date.now() / 1000); // 1735689600
+```
+
+### Issue: Schema fetch returns 403 Forbidden
+
+**Cause:** Missing `crm.schemas.custom.read` scope
+
+**Solution:** Add scope to integration configuration:
+```typescript
+const sync = createSync({
+  scopes: [
+    'crm.objects.contacts.read',
+    'crm.schemas.custom.read' // Required for schema introspection
+  ],
+  // ...
+});
+```
+
+### Issue: Pagination stops after 10,000 records
+
+**Cause:** HubSpot Search API hard limit
+
+**Solution:** Add additional filters to segment data:
+```typescript
+// Option 1: Filter by creation date ranges
+const ranges = [
+  { start: '2024-01-01', end: '2024-06-30' },
+  { start: '2024-07-01', end: '2024-12-31' }
+];
+
+for (const range of ranges) {
+  // Run separate search for each range
+}
+
+// Option 2: Filter by pipeline or other segmenting property
+const pipelines = await fetchPipelines();
+for (const pipeline of pipelines) {
+  // Run search filtered by pipeline
+}
+```
+
+## Common Mistakes
+
+### API Endpoint Selection
+- ❌ Using `/crm/v3/objects/{object}` for incremental syncs (no date filtering)
+- ❌ Using `/crm/v3/objects/{object}/search` for actions (lower rate limit)
+- ❌ Using GET method for Search API (must be POST)
+
+### Property Handling
+- ❌ Hardcoding property lists instead of using schema introspection
+- ❌ Using `hs_lastmodifieddate` for contacts (contacts use `lastmodifieddate`)
+- ❌ Using camelCase (`firstName` instead of `firstname`)
+- ❌ Missing `properties` wrapper in create/update requests
+- ❌ Using array format for standard GET (needs comma string)
+- ❌ Not chunking when object has 50+ properties
+- ❌ Fetching chunks but not merging by record ID
+
+### Data Formats
+- ❌ Timestamps in seconds instead of milliseconds
+
+### Rate Limits & Performance
+- ❌ Ignoring 4 req/sec Search API limit (vs 190/10s standard)
+- ❌ Not handling 10,000 result limit (need additional filters)
+
+### Schema & Architecture
+- ❌ Not fetching schemas to discover custom fields
+- ❌ Treating `hubspot_owner_id`/`hs_owner_id` as simple strings (should be lookups)
+- ❌ Assuming standard object ID format for custom objects
+
+## OAuth Scopes
+
+| Resource | Scope Format | Examples |
+|----------|--------------|----------|
+| Schema access | `crm.schemas.custom.read` | Required for introspection |
+| Object read | `crm.objects.{name}.read` | `crm.objects.contacts.read` |
+| Object write | `crm.objects.{name}.write` | `crm.objects.companies.write` |
+| Special scopes | Various | `tickets`, `e-commerce`, `sales-email-read` |
+
+## Error Codes
+
+| Code | Meaning | Common Causes |
+|------|---------|---------------|
+| 400 | Bad Request | Invalid property name, malformed filter syntax |
+| 403 | Forbidden | Missing OAuth scope for resource |
+| 429 | Rate Limited | Exceeded 4 req/sec (Search) or 190/10s (standard) |

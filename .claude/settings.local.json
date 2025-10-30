@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//Users/khaliqgant/.claude/skills/**)",
+      "WebSearch",
+      "Read(//Users/khaliqgant/Projects/nango/integration-templates/integrations/hubspot/**)",
+      "Read(//Users/khaliqgant/Projects/nango/customer-repos/nango-stacker/nango-integrations/hubspot/**)",
+      "Skill(creating-skills-skill)",
+      "Read(//Users/khaliqgant/Projects/nango/integration-templates/.cursor/rules/**)",
+      "Skill(creating-cursor-rules-skill)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
