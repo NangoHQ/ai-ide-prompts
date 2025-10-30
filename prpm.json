@@ -2,7 +2,7 @@
   "name": "nango-ai-ide-prompts",
   "license": "MIT",
   "repository": "https://github.com/NangoHQ/ai-ide-prompts",
-  "organization": "nango",
+  "organization": "Nango",
   "packages": [
     {
       "name": "hubspot-nango-integration",
