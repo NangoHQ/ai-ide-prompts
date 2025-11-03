@@ -6,7 +6,7 @@
   "packages": [
     {
       "name": "hubspot-nango-integration",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Use when writing HubSpot integration code in Nango - HubSpot-specific guidance on Search API for incremental syncs, property name variations, rate limits, and OAuth introspection",
       "format": "claude",
       "subtype": "skill",
@@ -24,7 +24,7 @@
     },
     {
       "name": "hubspot-nango-integration-rule",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "HubSpot-specific API patterns and constraints for Nango integrations",
       "format": "cursor",
       "subtype": "rule",
