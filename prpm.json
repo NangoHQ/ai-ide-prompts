@@ -23,6 +23,24 @@
       ]
     },
     {
+      "name": "nango-dry-run",
+      "version": "1.0.0",
+      "description": "Use when testing Nango syncs locally - runs dry-run command with proper parameters for integration testing without affecting production data",
+      "format": "claude",
+      "subtype": "skill",
+      "tags": [
+        "nango",
+        "testing",
+        "dry-run",
+        "integration",
+        "debugging",
+        "sync"
+      ],
+      "files": [
+        ".claude/skills/nango-dry-run/SKILL.md"
+      ]
+    },
+    {
       "name": "hubspot-nango-integration-rule",
       "version": "1.0.1",
       "description": "HubSpot-specific API patterns and constraints for Nango integrations",
@@ -37,6 +55,41 @@
       ],
       "files": [
         ".cursor/rules/hubspot-nango-integration.mdc"
+      ]
+    },
+    {
+      "name": "nango-zero-yaml-migration",
+      "version": "1.0.0",
+      "description": "Migrates Nango integrations from YAML configuration to zero-yaml TypeScript format with Zod schemas",
+      "format": "claude",
+      "subtype": "agent",
+      "tags": [
+        "nango",
+        "migration",
+        "typescript",
+        "zero-yaml",
+        "zod",
+        "integration"
+      ],
+      "files": [
+        ".claude/agents/nango-zero-yaml-migration.md"
+      ]
+    },
+    {
+      "name": "nango-zero-yaml-migration-rule",
+      "version": "1.0.0",
+      "description": "Patterns and conventions for migrating Nango integrations from YAML to zero-yaml TypeScript format",
+      "format": "cursor",
+      "subtype": "rule",
+      "tags": [
+        "nango",
+        "migration",
+        "typescript",
+        "zero-yaml",
+        "zod"
+      ],
+      "files": [
+        ".cursor/rules/nango-zero-yaml-migration.mdc"
       ]
     }
   ]

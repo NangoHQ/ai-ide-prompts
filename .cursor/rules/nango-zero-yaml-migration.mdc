@@ -1,0 +1,572 @@
+---
+description: Patterns and conventions for migrating Nango integrations from YAML to zero-yaml TypeScript format
+globs: ["**/integrations/**/*.ts", "**/models.ts", "**/nango.yaml"]
+alwaysApply: false
+---
+
+# Nango Zero-YAML Migration Rules
+
+## Overview
+
+When migrating Nango integrations from YAML to zero-yaml format, follow these patterns to ensure successful compilation and runtime behavior.
+
+## Import Statement Changes
+
+### CreateSync and CreateAction Imports
+
+**✅ CORRECT:**
+```typescript
+import { createSync } from 'nango';
+import * as z from 'zod';
+```
+
+**❌ INCORRECT:**
+```typescript
+import { createSync, type NangoSync } from 'nango';  // Don't import NangoSync
+import type { NangoSync } from '@nangohq/types';    // Wrong package
+import type { NangoSync } from '../../models';      // Old YAML path
+```
+
+### Model Schemas (Import from models.ts)
+
+**✅ CORRECT - Import Zod schemas:**
+```typescript
+import { Employee, Department } from '../models.js';  // Regular import
+
+const sync = createSync({
+    models: {
+        Employee,
+        Department
+    },
+    // ...
+});
+```
+
+**✅ ALSO CORRECT - Define inline if not in models.ts:**
+```typescript
+import * as z from 'zod';
+
+const sync = createSync({
+    models: {
+        Employee: z.object({
+            id: z.string(),
+            name: z.string()
+        })
+    },
+    // ...
+});
+```
+
+**❌ INCORRECT - Using import type:**
+```typescript
+import type { Employee } from '../models.js';  // Can't use as value
+
+const sync = createSync({
+    models: { Employee },  // Error: used as value
+    // ...
+});
+```
+
+### Relative Import Extensions
+
+All relative imports must include `.js` extension:
+
+**✅ CORRECT:**
+```typescript
+import { helper } from '../utils.js';
+import { mapper } from './mappers/transform.js';
+import type { Type } from '../types.js';
+```
+
+**❌ INCORRECT:**
+```typescript
+import { helper } from '../utils';
+import { mapper } from './mappers/transform';
+```
+
+## Zod Schema Patterns
+
+### Basic Type Conversions
+
+```typescript
+// String
+field: z.string()
+
+// Number
+count: z.number()
+
+// Boolean
+active: z.boolean()
+
+// Date (as string)
+createdAt: z.string()
+
+// Any
+data: z.any()
+```
+
+### Nullable Types
+
+**YAML:**
+```yaml
+email: string | null
+```
+
+**Zod:**
+```typescript
+email: z.union([z.string(), z.null()])
+```
+
+**❌ Don't use:** `z.string().nullable()` - use union instead
+
+### Optional Types
+
+**YAML:**
+```yaml
+middleName?: string
+```
+
+**Zod:**
+```typescript
+middleName: z.string().optional()
+```
+
+### Combining Optional and Nullable
+
+**YAML:**
+```yaml
+field?: string | null
+```
+
+**Zod:**
+```typescript
+field: z.union([z.string(), z.null()]).optional()
+```
+
+### Literal/Enum Types
+
+**YAML:**
+```yaml
+type: WORK | HOME | MOBILE
+```
+
+**Zod:**
+```typescript
+type: z.union([
+  z.literal("WORK"),
+  z.literal("HOME"),
+  z.literal("MOBILE")
+])
+```
+
+### Arrays
+
+**YAML:**
+```yaml
+items: Item[]
+emails: string[]
+```
+
+**Zod:**
+```typescript
+items: Item.array()      // Reference to another schema
+emails: z.string().array()
+```
+
+**❌ Don't use:** `Item[]` - TypeScript syntax doesn't work in Zod
+
+### Nested Objects
+
+**YAML:**
+```yaml
+address:
+  street: string
+  city: string
+  country:
+    name: string
+    code: string
+```
+
+**Zod:**
+```typescript
+address: z.object({
+  street: z.string(),
+  city: z.string(),
+  country: z.object({
+    name: z.string(),
+    code: z.string()
+  })
+})
+```
+
+### Dynamic Keys (Records/Maps)
+
+**YAML:**
+```yaml
+metadata:
+  __string: any
+```
+
+**Zod:**
+```typescript
+metadata: z.object({}).catchall(z.any())
+```
+
+### Optional Nested Objects
+
+**YAML:**
+```yaml
+manager?:
+  id: string
+  name: string
+```
+
+**Zod:**
+```typescript
+manager: z.object({
+  id: z.string(),
+  name: z.string()
+}).optional()
+```
+
+## Models.ts Structure
+
+**Note**: Define Zod schemas in models.ts and import them into sync files.
+
+```typescript
+import * as z from "zod";
+
+// Define Zod schema
+export const Employee = z.object({
+  id: z.string(),
+  firstName: z.string(),
+  lastName: z.string(),
+  email: z.union([z.string(), z.null()]),
+  startDate: z.string().optional()
+});
+
+// Export inferred TypeScript type
+export type Employee = z.infer<typeof Employee>;
+
+// Repeat for all models...
+```
+
+**Usage**:
+- Import Zod schemas into createSync: `import { Employee } from '../models.js'`
+- Use regular imports, NOT `import type`
+- Use TypeScript types for function parameters: `function process(emp: Employee) {}`
+
+## Sync File Structure
+
+### createSync Pattern
+
+**✅ CORRECT - Import from models.ts:**
+```typescript
+import { createSync } from 'nango';
+import { OutputModel, InputConfig } from '../models.js';  // Regular imports
+import { helperFunction } from '../helpers/helper.js';
+import type { ExternalType } from '../types.js';
+
+const sync = createSync({
+    description: 'Fetches data from API',
+    frequency: 'every hour',
+    syncType: 'incremental',  // or 'full'
+    version: '1.0.0',  // optional
+    trackDeletes: true,  // optional
+    endpoints: [{
+        method: 'GET',
+        path: '/api/endpoint',
+        group: 'Group Name'
+    }],
+    metadata: InputConfig,  // Import from models.ts
+    models: {
+        OutputModel  // Import from models.ts
+    },
+    exec: async (nango) => {
+        // Access metadata with bracket notation
+        const connection = await nango.getConnection();
+        const config = connection.metadata?.['configField'];
+
+        // Sync logic
+        const records = [];
+        await nango.batchSave(records, 'OutputModel');
+    }
+});
+
+export default sync;
+```
+
+**✅ ALSO CORRECT - Define inline if not in models.ts:**
+```typescript
+import { createSync } from 'nango';
+import * as z from 'zod';
+
+const sync = createSync({
+    description: 'Fetches data from API',
+    frequency: 'every hour',
+    syncType: 'incremental',
+    endpoints: [{
+        method: 'GET',
+        path: '/api/endpoint',
+        group: 'Group Name'
+    }],
+    metadata: z.object({
+        configField: z.string().optional()
+    }),
+    models: {
+        OutputModel: z.object({
+            id: z.string(),
+            name: z.string()
+        })
+    },
+    exec: async (nango) => {
+        const records = [];
+        await nango.batchSave(records, 'OutputModel');
+    }
+});
+
+export default sync;
+```
+
+**❌ INCORRECT - Using import type:**
+```typescript
+import { createSync } from 'nango';
+import type { OutputModel } from '../models.js';  // Can't use as value
+
+const sync = createSync({
+    models: { OutputModel },  // Error: used as value
+    // ...
+});
+```
+
+### Critical Rules
+
+1. **Import schemas from models.ts** - Use regular imports: `import { Model } from '../models.js'`
+2. **Not import type** - Use `import { Model }` not `import type { Model }`
+3. **Metadata separate from models** - Connection config goes in `metadata` field
+4. **Bracket notation for metadata** - `metadata?.['fieldName']`
+5. **No type annotations on exec** - Let TypeScript infer from generics
+6. **Import createSync only** - Don't import NangoSync type
+
+## Action File Structure
+
+### createAction Pattern
+
+**✅ CORRECT - Import from models.ts:**
+```typescript
+import { createAction } from 'nango';
+import { InputModel, OutputModel } from '../models.js';  // Regular imports
+import { helperFunction } from '../helpers/helper.js';
+import type { ExternalType } from '../types.js';
+
+const action = createAction({
+    description: 'Performs action on API',
+    version: '1.0.0',  // optional
+    scopes: 'scope1 scope2',  // optional OAuth scopes
+    input: InputModel,  // Input schema from models.ts
+    output: OutputModel,  // Output schema from models.ts
+    endpoint: {
+        method: 'POST',  // Can be POST, PUT, DELETE, etc.
+        path: '/api/action',
+        group: 'Group Name'  // optional
+    },
+    exec: async (nango, input) => {
+        // input is automatically validated - no need for zodValidateInput
+        // input parameter has full type safety from InputModel
+
+        // Action logic
+        const result = await performAction(input);
+
+        // Return the output directly (no batchSave)
+        return result;
+    }
+});
+
+export default action;
+```
+
+**✅ ALSO CORRECT - Define inline or complex output:**
+```typescript
+import { createAction } from 'nango';
+import * as z from 'zod';
+import { GithubRepo } from '../models.js';
+
+const action = createAction({
+    description: 'List repositories',
+    input: z.object({
+        owner: z.string(),
+        includePrivate: z.boolean().optional()
+    }),
+    output: z.object({  // Complex output with array
+        repos: GithubRepo.array(),
+        total: z.number()
+    }),
+    endpoint: {
+        method: 'GET',
+        path: '/repos/list'
+    },
+    exec: async (nango, input) => {
+        const repos = await fetchRepos(input.owner, input.includePrivate);
+        return {
+            repos,
+            total: repos.length
+        };  // Must match output schema shape
+    }
+});
+```
+
+**❌ INCORRECT - Old YAML pattern:**
+```typescript
+import { createAction } from 'nango';
+import type { InputModel } from '../models.js';
+
+const action = createAction({
+    // ...
+    exec: async (nango) => {  // Wrong: missing input parameter
+        const input = await nango.zodValidateInput({ ... });  // Don't do this
+        return result;
+    }
+});
+```
+
+### Critical Action Rules
+
+1. **Use createAction** - Import from 'nango' (different from createSync)
+2. **Input field** - Zod schema for action input (validated automatically)
+3. **Output field** - Zod schema for return value (NOT "models" like in sync)
+4. **Exec signature** - `async (nango, input)` - input is the second parameter
+5. **Return directly** - Return the output object (no `batchSave` like syncs)
+6. **No manual validation** - Don't use `nango.zodValidateInput()` anymore
+7. **Endpoint object** - Single endpoint object (not array like createSync)
+8. **HTTP methods** - Actions can use POST, PUT, DELETE, PATCH, GET
+9. **Import schemas** - Same rule as syncs: regular imports from models.ts
+
+## Index.ts Pattern
+
+Create `index.ts` in the integration root to register all syncs:
+
+```typescript
+import './syncs/employees.js';
+import './syncs/departments.js';
+import './syncs/locations.js';
+import './actions/create-user.js';
+```
+
+## Migration Workflow
+
+1. **Create/update models.ts** with Zod schemas
+
+2. **Update all imports** in sync/action/mapper files:
+   - Change `NangoSync` import to `'nango'`
+   - Add `.js` extensions
+   - Change model imports from `import type` to regular imports
+
+3. **Wrap syncs** with `createSync()`
+
+4. **Create index.ts** with all imports
+
+5. **Remove nango.yaml:**
+   ```bash
+   rm nango.yaml
+   ```
+
+6. **Compile and fix errors:**
+   ```bash
+   npx nango compile
+   ```
+
+## Common Compilation Errors
+
+### Models Type Error
+```
+Type '{ Model: ZodObject<...> }' is not assignable to type 'never'
+```
+**Fix:** Make sure you're using `import { Model }` (regular import) not `import type { Model }`.
+
+### Metadata Access Error
+```
+Property 'lagMinutes' comes from an index signature, so it must be accessed with ['lagMinutes']
+```
+**Fix:** Use bracket notation: `metadata?.['lagMinutes']`
+
+### Missing .js Extension
+```
+Relative import paths need explicit file extensions
+```
+**Fix:** Add `.js` to import: `from '../models.js'`
+
+### Can't Use Type as Value
+```
+'Model' cannot be used as a value because it was imported using 'import type'
+```
+**Fix:** Change to regular import: `import { Model } from '../models.js'`
+
+### Implicit Any
+```
+Parameter 'id' implicitly has an 'any' type
+```
+**Fix:** Add type annotation: `(id: string) => ...`
+
+### Module Not Found
+```
+Cannot find module '../models'
+```
+**Fix:** Add `.js`: `from '../models.js'`
+
+## Anti-Patterns
+
+### ❌ Don't Use import type for Zod Schemas
+```typescript
+import type { Employee } from '../models.js';  // Can't use as value
+const sync = createSync({
+    models: { Employee }  // Type error: used as value
+});
+```
+
+### ❌ Don't Import NangoSync Type
+```typescript
+import { createSync, type NangoSync } from 'nango';
+const sync = createSync({
+    exec: async (nango: NangoSync) => { }  // Unnecessary, inferred
+});
+```
+
+### ❌ Don't Use TypeScript Array Syntax in Zod
+```typescript
+items: Item[]  // Wrong
+items: Item.array()  // Correct
+```
+
+### ❌ Don't Skip .js Extensions
+```typescript
+import { util } from './utils';  // Will fail with node16 moduleResolution
+```
+
+### ❌ Don't Keep nango.yaml
+The presence of `nango.yaml` prevents zero-yaml mode from working.
+
+## Testing
+
+After migration, verify:
+```bash
+npx nango compile  # Must pass with 0 errors
+```
+
+Check that:
+- No "missing .ts files" errors
+- No TypeScript compilation errors
+- All syncs are listed in compiled output
+- Models are properly registered
+
+## Reference
+
+- Migration docs: https://nango.dev/docs/implementation-guides/migrations/migrate-to-zero-yaml
+- Zod documentation: https://zod.dev
+- Node ESM imports require `.js` extensions with `moduleResolution: "node16"`
+
+## Notes
+
+- Zero-yaml support is current; YAML support ends 2025
+- The migration tool (`npx nango migrate-to-zero-yaml`) has known issues
+- Manual migration following these patterns is more reliable
+- Delete `nango.yaml` completely - its presence blocks zero-yaml mode
