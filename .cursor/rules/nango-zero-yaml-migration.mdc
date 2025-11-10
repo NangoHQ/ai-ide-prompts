@@ -1,6 +1,6 @@
 ---
 description: Patterns and conventions for migrating Nango integrations from YAML to zero-yaml TypeScript format
-globs: ["**/integrations/**/*.ts", "**/models.ts", "**/nango.yaml"]
+globs: ["**/nango-integrations/**/*.ts", "**/integrations/**/*.ts", "**/models.ts", "**/nango.yaml"]
 alwaysApply: false
 ---
 

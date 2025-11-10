@@ -77,7 +77,7 @@
     },
     {
       "name": "nango-zero-yaml-migration-rule",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Patterns and conventions for migrating Nango integrations from YAML to zero-yaml TypeScript format",
       "format": "cursor",
       "subtype": "rule",
