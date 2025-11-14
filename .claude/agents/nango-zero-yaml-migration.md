@@ -311,6 +311,10 @@ npx nango compile
    - If you encounter type errors with `models` field, document the exact error
    - The API may differ from documentation; ask for clarification
 
+## Test Suite
+If there are tests for the integrations so at the file path `nango-integrations/${integration}/tests/*` or `nango-integrations/tests/*`
+if there is a `await runAction` or `await runSync` it needs to be changed to `await runAction.exec` or `await runSync.exec`
+
 ## Verification Checklist
 
 After migration, verify:
