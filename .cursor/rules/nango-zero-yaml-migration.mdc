@@ -555,10 +555,18 @@ The latest version of `npx nango migrate-to-zero-yaml` has improved significantl
    rm nango.yaml
    ```
 
-6. **Compile and fix errors:**
+6. **Compile and fix ALL errors (MANDATORY FINAL STEP):**
+
+   **⚠️ CRITICAL: This step is MANDATORY and must be run from the `nango-integrations` directory.**
+
+   **All errors MUST be fixed before the migration is considered complete.**
+
    ```bash
+   cd nango-integrations
    npx nango compile
    ```
+
+   **The migration is NOT complete until this command succeeds with 0 errors.**
 
 ## Common Compilation Errors
 
@@ -649,16 +657,26 @@ After migration, verify prerequisites and completeness:
 - [ ] All syncs wrapped in `createSync()`
 - [ ] All actions wrapped in `createAction()`
 
-### Compilation Check
+### Final Compilation Check (MANDATORY)
+
+**⚠️ This is the FINAL and MANDATORY step - migration is NOT complete without this.**
+
+**Must be run from the `nango-integrations` directory:**
+
 ```bash
-npx nango compile  # Must pass with 0 errors
+cd nango-integrations
+npx nango compile
 ```
 
-Check that:
-- No "missing .ts files" errors
-- No TypeScript compilation errors
-- All syncs are listed in compiled output
-- Models are properly registered
+**Required outcome:**
+- [ ] Command executed from `nango-integrations` directory
+- [ ] **MUST pass with 0 errors - ALL errors must be fixed**
+- [ ] No "missing .ts files" errors
+- [ ] No TypeScript compilation errors
+- [ ] All syncs are listed in compiled output
+- [ ] Models are properly registered
+
+**If compilation fails, you MUST fix all errors before considering the migration complete.**
 
 ## Reference
 
@@ -669,7 +687,9 @@ Check that:
 ## Notes
 
 - Zero-yaml support is current; YAML support ends 2025
-- The migration tool (`npx nango migrate-to-zero-yaml`) has improved significantly - always run it first as a mandatory step
+- The migration tool (`npx nango migrate-to-zero-yaml`) has improved significantly - always run it first as a mandatory step from `nango-integrations` directory
 - The automated tool handles most of the migration, but may require manual fixes for edge cases
 - Always upgrade to the latest version of Nango before running the migration tool
+- **CRITICAL: `npx nango compile` must be run from `nango-integrations` directory as the final step, and ALL errors must be fixed**
+- Migration is NOT complete until compilation succeeds with 0 errors
 - Delete `nango.yaml` completely - its presence blocks zero-yaml mode

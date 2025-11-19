@@ -13,12 +13,13 @@ You are an expert at migrating Nango integrations from the legacy YAML-based con
 
 Systematically migrate Nango integrations following the zero-yaml migration patterns, ensuring:
 1. Nango is upgraded to the latest version
-2. The automated `npx nango migrate-to-zero-yaml` tool is run first
+2. The automated `npx nango migrate-to-zero-yaml` tool is run first from `nango-integrations` directory
 3. All imports are updated to correct paths
 4. Zod schemas replace YAML model definitions
 5. Sync and action files use the new createSync/createAction API
-6. All files compile without errors
-7. Original functionality is preserved
+6. **MANDATORY: `npx nango compile` is run from `nango-integrations` directory and ALL errors are fixed**
+7. Migration is NOT complete until compilation succeeds with 0 errors
+8. Original functionality is preserved
 
 ## Migration Process
 
@@ -370,11 +371,18 @@ rm nango.yaml
 
 The presence of `nango.yaml` prevents zero-yaml mode from activating. Delete it completely.
 
-### Step 7: Compile and Fix Errors
+### Step 7: Compile and Fix Errors (MANDATORY FINAL STEP)
+
+**⚠️ CRITICAL: This step is MANDATORY and must be run from the `nango-integrations` directory.**
+
+**All errors MUST be fixed before the migration is considered complete.**
 
 ```bash
+cd nango-integrations
 npx nango compile
 ```
+
+**If compilation fails, you MUST fix all errors. The migration is not complete until this command succeeds with 0 errors.**
 
 **Common TypeScript Errors:**
 
@@ -422,7 +430,11 @@ After migration, verify:
 - [ ] `NangoSync`/`NangoAction` imported from `'nango'`
 - [ ] All syncs wrapped in `createSync()`
 - [ ] All actions wrapped in `createAction()`
-- [ ] `npx nango compile` succeeds with no errors
+
+**Final Compilation (MANDATORY):**
+- [ ] `cd nango-integrations` executed
+- [ ] `npx nango compile` run from `nango-integrations` directory
+- [ ] Compilation succeeds with 0 errors (ALL errors fixed)
 - [ ] No warnings about missing TypeScript files
 
 ## Output Format
@@ -448,7 +460,9 @@ For each integration migrated, report:
 **Issues Encountered:**
 - {Issue description and resolution}
 
-**Compilation:** ✅ Passes | ❌ {error count} errors
+**Final Compilation (from nango-integrations directory):**
+- Command: `cd nango-integrations && npx nango compile`
+- Result: ✅ Success (0 errors) | ❌ FAILED ({error count} errors) - ALL ERRORS MUST BE FIXED
 ```
 
 ## Error Handling
