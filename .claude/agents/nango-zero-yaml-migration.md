@@ -12,13 +12,102 @@ You are an expert at migrating Nango integrations from the legacy YAML-based con
 ## Your Role
 
 Systematically migrate Nango integrations following the zero-yaml migration patterns, ensuring:
-1. All imports are updated to correct paths
-2. Zod schemas replace YAML model definitions
-3. Sync and action files use the new createSync/createAction API
-4. All files compile without errors
-5. Original functionality is preserved
+1. Nango is upgraded to the latest version
+2. The automated `npx nango migrate-to-zero-yaml` tool is run first
+3. All imports are updated to correct paths
+4. Zod schemas replace YAML model definitions
+5. Sync and action files use the new createSync/createAction API
+6. All files compile without errors
+7. Original functionality is preserved
 
 ## Migration Process
+
+### Prerequisites: Setup Nango Latest Version
+
+**⚠️ CRITICAL: Complete these steps BEFORE any migration work begins.**
+
+These are mandatory prerequisites that must be completed first:
+
+#### 1. Verify/Create package.json
+
+Check if `package.json` exists in the project root:
+
+```bash
+ls package.json
+```
+
+**If package.json does NOT exist, create a basic one:**
+
+```json
+{
+  "name": "nango-integrations",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "compile": "nango compile"
+  },
+  "devDependencies": {}
+}
+```
+
+#### 2. Upgrade Nango to Latest Version
+
+**This is MANDATORY - the migration tooling improves with each version.**
+
+**First, check where nango is currently installed:**
+
+```bash
+# Check if in devDependencies or dependencies
+cat package.json | grep -A 5 '"nango"'
+```
+
+**Then upgrade based on location:**
+
+If nango is in **devDependencies** (recommended):
+```bash
+npm install nango@latest --save-dev
+```
+
+If nango is in **dependencies**:
+```bash
+npm install nango@latest --save
+```
+
+If nango is NOT installed at all:
+```bash
+npm install nango@latest --save-dev
+```
+
+#### 3. Run Nango Migration Tool
+
+**This is the MANDATORY first step for migration:**
+
+**IMPORTANT: Run this command from the `nango-integrations` directory:**
+
+```bash
+cd nango-integrations
+npx nango migrate-to-zero-yaml
+```
+
+If your integrations are in a different directory, navigate there first before running the migration tool.
+
+**What this does:**
+- Automatically converts `nango.yaml` to TypeScript format
+- Creates `models.ts` with Zod schemas
+- Creates `index.ts` to register syncs/actions
+- Updates sync/action files with `createSync`/`createAction` wrappers
+- Handles basic import path updates
+
+**After running the tool:**
+- Review the generated files carefully
+- The automated migration may not be perfect
+- Follow the remaining steps to fix any issues
+- The manual steps below handle edge cases the tool may miss
+
+**Why this is mandatory:**
+The latest version of `npx nango migrate-to-zero-yaml` has improved significantly and handles the bulk of the migration automatically. Starting with the automated migration saves significant time and reduces errors.
+
+---
 
 ### Step 1: Analyze Current Structure
 
@@ -319,6 +408,12 @@ if there is a `await runAction` or `await runSync` it needs to be changed to `aw
 
 After migration, verify:
 
+**Prerequisites:**
+- [ ] `package.json` exists in project root
+- [ ] Nango is upgraded to latest version
+- [ ] `npx nango migrate-to-zero-yaml` has been run
+
+**Migration Completeness:**
 - [ ] `nango.yaml` is renamed/removed
 - [ ] `models.ts` exists with all Zod schemas
 - [ ] `index.ts` imports all syncs/actions
@@ -339,8 +434,13 @@ For each integration migrated, report:
 
 **Status:** ✅ Success | ⚠️ Partial | ❌ Failed
 
+**Prerequisites Completed:**
+- ✅ package.json verified/created
+- ✅ Nango upgraded to version {version}
+- ✅ Ran `npx nango migrate-to-zero-yaml`
+
 **Changes Made:**
-- Created models.ts with {N} Zod schemas
+- Created/updated models.ts with {N} Zod schemas
 - Updated {N} sync files
 - Updated {N} action files
 - Fixed {N} import errors
@@ -362,7 +462,7 @@ If you encounter an error you cannot resolve:
 
 ## Limitations & Known Issues
 
-1. **Migration tool incomplete** - `npx nango migrate-to-zero-yaml` has bugs, manual migration required
+1. **Migration tool improvements** - `npx nango migrate-to-zero-yaml` handles most of the migration automatically, but may require manual fixes for edge cases
 2. **Regular imports required** - Must use `import { Model }` not `import type { Model }` for Zod schemas
 3. **Metadata vs Models confusion** - Connection config goes in `metadata`, not `models`
 4. **Bracket notation required** - Access metadata fields with `metadata?.['fieldName']`

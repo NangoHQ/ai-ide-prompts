@@ -452,20 +452,105 @@ import './syncs/locations.js';
 import './actions/create-user.js';
 ```
 
+## Prerequisites: Setup Before Migration
+
+**⚠️ CRITICAL: Complete these steps BEFORE starting any migration work.**
+
+### 1. Verify/Create package.json
+
+Check if `package.json` exists in the project root:
+
+```bash
+ls package.json
+```
+
+**If package.json does NOT exist, create a basic one:**
+
+```json
+{
+  "name": "nango-integrations",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "compile": "nango compile"
+  },
+  "devDependencies": {}
+}
+```
+
+### 2. Upgrade Nango to Latest Version
+
+**This is MANDATORY - the migration tooling improves with each version.**
+
+**First, check where nango is currently installed:**
+
+```bash
+# Check if in devDependencies or dependencies
+cat package.json | grep -A 5 '"nango"'
+```
+
+**Then upgrade based on location:**
+
+If nango is in **devDependencies** (recommended):
+```bash
+npm install nango@latest --save-dev
+```
+
+If nango is in **dependencies**:
+```bash
+npm install nango@latest --save
+```
+
+If nango is NOT installed at all:
+```bash
+npm install nango@latest --save-dev
+```
+
+### 3. Run Nango Migration Tool (MANDATORY)
+
+**IMPORTANT: Run this command from the `nango-integrations` directory:**
+
+```bash
+cd nango-integrations
+npx nango migrate-to-zero-yaml
+```
+
+If your integrations are in a different directory, navigate there first before running the migration tool.
+
+**What this does:**
+- Automatically converts `nango.yaml` to TypeScript format
+- Creates `models.ts` with Zod schemas
+- Creates `index.ts` to register syncs/actions
+- Updates sync/action files with `createSync`/`createAction` wrappers
+- Handles basic import path updates
+
+**After running the tool:**
+- Review the generated files carefully
+- The automated migration may not be perfect
+- Follow the remaining steps to fix any issues
+- The manual steps below handle edge cases the tool may miss
+
+**Why this is mandatory:**
+The latest version of `npx nango migrate-to-zero-yaml` has improved significantly and handles the bulk of the migration automatically. Starting with the automated migration saves significant time and reduces errors.
+
+---
+
 ## Migration Workflow
 
-1. **Create/update models.ts** with Zod schemas
+**After completing the prerequisites above, continue with these steps if needed:**
 
-2. **Update all imports** in sync/action/mapper files:
+1. **Review auto-generated models.ts** - The migration tool creates this, but you may need to refine it
+
+2. **Update any remaining imports** in sync/action/mapper files:
    - Change `NangoSync` import to `'nango'`
    - Add `.js` extensions
    - Change model imports from `import type` to regular imports
 
-3. **Wrap syncs** with `createSync()`
+3. **Verify syncs are wrapped** with `createSync()` - Tool should handle this
 
-4. **Create index.ts** with all imports
+4. **Verify index.ts** exists with all imports - Tool should create this
 
-5. **Remove nango.yaml:**
+5. **Remove nango.yaml** (if not already removed by tool):
    ```bash
    rm nango.yaml
    ```
@@ -547,7 +632,24 @@ The presence of `nango.yaml` prevents zero-yaml mode from working.
 
 ## Testing
 
-After migration, verify:
+After migration, verify prerequisites and completeness:
+
+### Prerequisites Checklist
+- [ ] `package.json` exists in project root
+- [ ] Nango is upgraded to latest version
+- [ ] `npx nango migrate-to-zero-yaml` has been run from `nango-integrations` directory
+
+### Migration Completeness Checklist
+- [ ] `nango.yaml` is removed
+- [ ] `models.ts` exists with all Zod schemas
+- [ ] `index.ts` imports all syncs/actions
+- [ ] All imports use correct paths with `.js` extensions
+- [ ] Models use regular imports (not `import type`)
+- [ ] `NangoSync`/`NangoAction` imported from `'nango'`
+- [ ] All syncs wrapped in `createSync()`
+- [ ] All actions wrapped in `createAction()`
+
+### Compilation Check
 ```bash
 npx nango compile  # Must pass with 0 errors
 ```
@@ -567,6 +669,7 @@ Check that:
 ## Notes
 
 - Zero-yaml support is current; YAML support ends 2025
-- The migration tool (`npx nango migrate-to-zero-yaml`) has known issues
-- Manual migration following these patterns is more reliable
+- The migration tool (`npx nango migrate-to-zero-yaml`) has improved significantly - always run it first as a mandatory step
+- The automated tool handles most of the migration, but may require manual fixes for edge cases
+- Always upgrade to the latest version of Nango before running the migration tool
 - Delete `nango.yaml` completely - its presence blocks zero-yaml mode
