@@ -94,7 +94,7 @@
     },
     {
       "name": "nango-docs-migrator",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "description": "Migrates Nango integration documentation from old tabbed format to new simplified structure with separate guide pages and pre-built syncs sections",
       "format": "claude",
       "subtype": "agent",
@@ -124,6 +124,23 @@
       ],
       "files": [
         ".claude/skills/adding-nango-integration-docs/SKILL.md"
+      ]
+    },
+    {
+      "name": "nango-esm-migration",
+      "version": "1.0.0",
+      "description": "Use when fixing CJS/ESM module issues in Nango integrations after zero-yaml migration - covers import path fixes, creating ESM wrappers for CJS vendor modules, and restoring commented-out code",
+      "author": "",
+      "format": "claude",
+      "subtype": "skill",
+      "files": [
+        ".claude/skills/nango-esm-zero-yaml-migration/SKILL.md"
+      ],
+      "tags": [
+        "nango",
+        "zero-yaml",
+        "migration",
+        "integration"
       ]
     }
   ]

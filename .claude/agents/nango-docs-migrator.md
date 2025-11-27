@@ -76,7 +76,7 @@ Follow these principles when creating and structuring guides:
 
 **SEO Optimization:**
 - Optimize guide slug & title for SEO
-- Good: "How to register your own Salesforce OAuth app" with slug `salesforce-api-oauth-app-setup`
+- Good: "How to register your own Salesforce API OAuth app" with slug `how-to-register-your-own-salesforce-api-oauth-app`
 - Bad: "OAuth app setup" with slug `oauth-setup`
 
 ### What NOT to Include (from old format)
@@ -112,7 +112,7 @@ The transformed main integration page becomes the primary page at `/api-integrat
 
 **File Operations:**
 - Use the **Write tool** to create the main file at the new location: `docs/api-integrations/[slug].mdx`
-- Use the **Write tool** to create the setup guide: `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app.mdx`
+- Use the **Write tool** to create the setup guide: `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app.mdx`
 - **Check for connect guide:** Use the **Read tool** to check if `docs/integrations/all/[slug]/connect.mdx` exists
   - If it exists, use the **Write tool** to move it to: `docs/api-integrations/[slug]/connect.mdx`
   - Preserve the content exactly as-is (same as setup guide preservation rules)
@@ -123,7 +123,7 @@ The transformed main integration page becomes the primary page at `/api-integrat
   3. Add a redirect in the `redirects` array: `{"source": "/integrations/all/[slug]", "destination": "/api-integrations/[slug]"}`
 - Update `packages/providers/providers.yaml` using the **Edit tool** to:
   1. Update the `docs` property: `docs: https://nango.dev/docs/api-integrations/[slug]`
-  2. **For OAUTH2 auth mode:** Add or update the `setup_guide_url` property: `setup_guide_url: https://nango.dev/docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app`
+  2. **For OAUTH2 auth mode:** Add or update the `setup_guide_url` property: `setup_guide_url: https://nango.dev/docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app`
   3. **For non-OAUTH2 auth modes (API_KEY, BASIC, etc.):** Use `docs_connect` instead of `setup_guide_url`: `docs_connect: https://nango.dev/docs/api-integrations/[slug]/connect`
   4. If connect guide exists AND auth mode is OAUTH2, update the `docs_connect` property: `docs_connect: https://nango.dev/docs/api-integrations/[slug]/connect`
 
@@ -370,7 +370,7 @@ First, check the provider's `auth_mode` in `packages/providers/providers.yaml` t
 
 Nango maintained guides for common use cases.
 
-- [How to register your own [Integration] OAuth app](/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-oauth-app)
+- [How to register your own [Integration] API OAuth app](/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-api-oauth-app)
 Register an OAuth app with [Integration] and obtain credentials to connect it to Nango
 
 - [How do I link my [Integration] account?](/api-integrations/[integration-slug]/connect) **[Only if connect guide exists]**
@@ -396,7 +396,7 @@ Official docs: [[Integration] API docs]([API_DOCS_URL])
 **For OAUTH2 auth mode:**
 - Create ONE guide link to the OAuth setup guide (don't duplicate links to the same page)
 - **Check for connect guide:** If `docs/integrations/all/[integration-slug]/connect.mdx` exists, add a second guide link to the connect guide
-- Link format is `/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-oauth-app`
+- Link format is `/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-api-oauth-app`
 
 **For non-OAUTH2 auth modes:**
 - Create ONE guide link to the connect guide ONLY
@@ -453,7 +453,7 @@ Do not skip this section or create custom empty states - the snippet handles it.
 Before creating guide files, check the provider's `auth_mode` in `packages/providers/providers.yaml`:
 
 **For OAUTH2 auth mode:**
-- **File path:** `docs/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-oauth-app.mdx`
+- **File path:** `docs/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-api-oauth-app.mdx`
 - Create a full OAuth setup guide from the OAuth setup tab content
 - In providers.yaml, use `setup_guide_url` property
 
@@ -467,7 +467,7 @@ Before creating guide files, check the provider's `auth_mode` in `packages/provi
 **Why this matters:**
 For API_KEY and similar auth modes, users need to know how to find their API key/credentials AND how to enter them in the Connect UI. The connect guide covers both, while a separate "obtain API key" guide would be redundant and incomplete.
 
-**Important:** The setup guide is a SUB-GUIDE, not the main integration page. The main integration page (from step 9) will be at `docs/api-integrations/[integration-slug].mdx`, and this setup guide should be at `docs/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-oauth-app.mdx` (for OAUTH2) or `docs/api-integrations/[integration-slug]/connect.mdx` (for non-OAUTH2) in a nested directory structure. The filename matches the guide title for SEO optimization (e.g., `how-to-register-your-own-salesforce-oauth-app.mdx`).
+**Important:** The setup guide is a SUB-GUIDE, not the main integration page. The main integration page (from step 9) will be at `docs/api-integrations/[integration-slug].mdx`, and this setup guide should be at `docs/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-api-oauth-app.mdx` (for OAUTH2) or `docs/api-integrations/[integration-slug]/connect.mdx` (for non-OAUTH2) in a nested directory structure. The filename matches the guide title for SEO optimization (e.g., `how-to-register-your-own-salesforce-api-oauth-app.mdx`).
 
 **IMPORTANT: Update docs.json sidebar navigation and redirects**
 When creating guide files, you MUST update both the sidebar navigation and redirects in `docs/docs.json`:
@@ -491,7 +491,7 @@ When creating guide files, you MUST update both the sidebar navigation and redir
    - This ensures the old URL redirects to the new URL on production
 
 3. **DO NOT add setup guide pages to docs.json**
-   - Setup guides exist at `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app.mdx` but are NOT listed in navigation
+   - Setup guides exist at `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app.mdx` but are NOT listed in navigation
    - Users access setup guides via links in the main integration page
    - Additional guide pages also NOT added to docs.json
 
@@ -501,7 +501,7 @@ When creating guide files, you MUST update both the sidebar navigation and redir
 
 5. **Use consistent path structure:**
    - Main page in docs.json: `"api-integrations/[slug]"` (e.g., `"api-integrations/salesforce"`)
-   - Setup guide file path: `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app.mdx` (NOT in docs.json)
+   - Setup guide file path: `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app.mdx` (NOT in docs.json)
    - Additional guide file paths: `docs/api-integrations/[slug]/how-to-[guide-name]-for-[slug].mdx` (NOT in docs.json)
 
 **Step-by-step workflow for updating docs.json:**
@@ -535,11 +535,11 @@ If migrating `docs/integrations/all/salesforce.mdx`:
 3. Replace it with ONE entry in the same location:
    - `"api-integrations/salesforce"` (main integration page at `/docs/api-integrations/salesforce.mdx`)
 4. Keep the same position in the array (e.g., if salesforce was between sage-intacct and salesforce-cdp, keep it there)
-5. The setup guide at `/docs/api-integrations/salesforce/how-to-register-your-own-salesforce-oauth-app.mdx` is NOT added to docs.json
+5. The setup guide at `/docs/api-integrations/salesforce/how-to-register-your-own-salesforce-api-oauth-app.mdx` is NOT added to docs.json
 
 **For multiple guide pages (split sections):**
 If the user approves splitting h2 sections into separate guides:
-- Create files at `docs/api-integrations/salesforce/how-to-register-your-own-salesforce-oauth-app.mdx`, `docs/api-integrations/salesforce/how-to-set-up-webhooks-for-salesforce.mdx`, etc.
+- Create files at `docs/api-integrations/salesforce/how-to-register-your-own-salesforce-api-oauth-app.mdx`, `docs/api-integrations/salesforce/how-to-set-up-webhooks-for-salesforce.mdx`, etc.
 - Use title-based slugs for all guide files (e.g., "How to..." becomes `how-to-...`)
 - DO NOT add these guide pages to docs.json
 - Only the main integration page `"api-integrations/salesforce"` is in docs.json
@@ -652,7 +652,7 @@ description: 'Register an OAuth app with [Integration] and connect it to Nango'
 
 **Example for Salesforce:**
 
-File: `docs/api-integrations/salesforce/how-to-register-your-own-salesforce-oauth-app.mdx`
+File: `docs/api-integrations/salesforce/how-to-register-your-own-salesforce-api-oauth-app.mdx`
 
 ```markdown
 ---
@@ -728,7 +728,7 @@ Connect to [Integration] with Nango and see data flow in 2 minutes.
 
 Nango maintained guides for common use cases.
 
-- [How to register your own [Integration] OAuth app](/api-integrations/[slug]/setup-[slug]-oauth)
+- [How to register your own [Integration] API OAuth app](/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app)
 Register an OAuth app with [Integration] and obtain credentials to connect it to Nango
 
 Official docs: [[Integration] API docs]([API_DOCS_URL])
@@ -745,7 +745,7 @@ import PreBuiltUseCases from "/snippets/generated/[integration-slug]/PreBuiltUse
 ```
 
 **B. Setup Guide File (Sub-guide)**
-- **Location:** `docs/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-oauth-app.mdx`
+- **Location:** `docs/api-integrations/[integration-slug]/how-to-register-your-own-[integration-slug]-api-oauth-app.mdx`
 - **Structure:** As described in step 8
 
 **C. Connect Guide File (if exists)**
@@ -773,7 +773,7 @@ Before writing the transformed files, verify:
 - [ ] Tip block removed from end of Quickstart
 - [ ] New Step 4 added with implementation guide reference
 - [ ] Integration Guides section created with correct link format
-- [ ] Guide link uses format: `/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app` (e.g., `/api-integrations/salesforce/how-to-register-your-own-salesforce-oauth-app`)
+- [ ] Guide link uses format: `/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app` (e.g., `/api-integrations/salesforce/how-to-register-your-own-salesforce-api-oauth-app`)
   - **Important:** Links to the SETUP guide (with title-based filename), not the main page
   - **Important:** TWO SPACES added after closing parenthesis `)` before line break
 - [ ] **Connect guide checked:** If `docs/integrations/all/[slug]/connect.mdx` exists, link to connect guide added
@@ -787,7 +787,7 @@ Before writing the transformed files, verify:
 
 **Setup guide file (Sub-guide):**
 - [ ] **Checked auth_mode:** Determined if provider uses OAUTH2 or non-OAUTH2
-- [ ] **For OAUTH2 - File location:** `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app.mdx`
+- [ ] **For OAUTH2 - File location:** `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app.mdx`
 - [ ] **For non-OAUTH2 - File location:** `docs/api-integrations/[slug]/connect.mdx` (connect guide serves as the primary guide)
 - [ ] **Content quality checked:** Typos and grammar issues fixed, Nango-specific instructions preserved
 - [ ] Proper frontmatter with SEO-optimized title, sidebarTitle, description
@@ -827,7 +827,7 @@ Before writing the transformed files, verify:
 **providers.yaml updates:**
 - [ ] **Checked auth_mode:** Determined if provider uses OAUTH2 or non-OAUTH2 (API_KEY, BASIC, etc.)
 - [ ] **Updated docs URL:** `docs: https://nango.dev/docs/api-integrations/[slug]`
-- [ ] **For OAUTH2:** Added/updated `setup_guide_url: https://nango.dev/docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app`
+- [ ] **For OAUTH2:** Added/updated `setup_guide_url: https://nango.dev/docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app`
 - [ ] **For non-OAUTH2:** Added/updated `docs_connect: https://nango.dev/docs/api-integrations/[slug]/connect` (instead of setup_guide_url)
 - [ ] **For OAUTH2 with connect guide:** Also added `docs_connect: https://nango.dev/docs/api-integrations/[slug]/connect`
 - [ ] **Valid YAML syntax:** Proper indentation and formatting verified
@@ -849,7 +849,7 @@ When migrating a file, report:
 - Added Integration Guides section (linking to setup guide with TWO SPACES after closing parenthesis)
 - Added Pre-built syncs & actions section using snippet import
 
-**Setup guide (sub-guide):** `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app.mdx`
+**Setup guide (sub-guide):** `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app.mdx`
 
 **Status:** ✅ Created | ⚠️ Partial | ❌ Failed | 🤔 Awaiting User Decision
 
@@ -885,7 +885,7 @@ If applicable, list h2 sections that could become separate guides and indicate t
 **providers.yaml updates:**
 - ✅ Checked auth_mode: [OAUTH2 | API_KEY | BASIC | etc.]
 - ✅ Updated docs URL to `https://nango.dev/docs/api-integrations/[slug]`
-- **For OAUTH2:** ✅ Added/updated setup_guide_url to `https://nango.dev/docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app`
+- **For OAUTH2:** ✅ Added/updated setup_guide_url to `https://nango.dev/docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app`
 - **For non-OAUTH2:** ✅ Added/updated docs_connect to `https://nango.dev/docs/api-integrations/[slug]/connect` (instead of setup_guide_url)
 - **For OAUTH2 with connect guide:** ✅ Also added docs_connect to `https://nango.dev/docs/api-integrations/[slug]/connect` | ⏭️ Skipped (no connect guide)
 
@@ -903,7 +903,7 @@ If applicable, list h2 sections that could become separate guides and indicate t
 
 **Summary:**
 - Main integration file: ✅ (moved to `api-integrations/[slug].mdx`)
-- Setup guide file: ✅ (created at `api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app.mdx`) | 🤔 (awaiting decision on splitting)
+- Setup guide file: ✅ (created at `api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app.mdx`) | 🤔 (awaiting decision on splitting)
 - docs.json updated: ✅ (replaced old entry with ONE new entry: main page only)
 - All links verified: ✅
 
@@ -962,7 +962,7 @@ If the integration has no syncs/actions:
 
 **OUTPUT FILES:**
 1. `docs/api-integrations/salesforce.mdx` (main integration page - MOVED)
-2. `docs/api-integrations/salesforce/how-to-register-your-own-salesforce-oauth-app.mdx` (setup guide - NEW)
+2. `docs/api-integrations/salesforce/how-to-register-your-own-salesforce-api-oauth-app.mdx` (setup guide - NEW)
 3. `docs/api-integrations/salesforce/connect.mdx` (connect guide - MOVED, if it exists)
 
 **Key differences in main file:**
@@ -971,7 +971,7 @@ If the integration has no syncs/actions:
 3. No StatusWidget
 4. No Tabs wrapper
 5. Quickstart is inline with 4 steps
-6. Integration Guides section added (linking to `/api-integrations/salesforce/how-to-register-your-own-salesforce-oauth-app` with TWO SPACES after closing parenthesis)
+6. Integration Guides section added (linking to `/api-integrations/salesforce/how-to-register-your-own-salesforce-api-oauth-app` with TWO SPACES after closing parenthesis)
 7. If connect guide exists, link added to `/api-integrations/salesforce/connect`
 8. Pre-built syncs & actions section added
 9. OAuth setup, links, and gotchas removed (moved to separate setup guide file)
@@ -985,7 +985,7 @@ If the integration has no syncs/actions:
 
 **providers.yaml changes:**
 1. Updated `docs` property from `https://nango.dev/docs/integrations/all/salesforce` to `https://nango.dev/docs/api-integrations/salesforce`
-2. Added `setup_guide_url: https://nango.dev/docs/api-integrations/salesforce/how-to-register-your-own-salesforce-oauth-app`
+2. Added `setup_guide_url: https://nango.dev/docs/api-integrations/salesforce/how-to-register-your-own-salesforce-api-oauth-app`
 3. If connect guide exists, updated `docs_connect: https://nango.dev/docs/api-integrations/salesforce/connect`
 
 ## Parallel Processing
@@ -1037,7 +1037,7 @@ If a file fails to parse or transform:
 A successful migration means:
 1. **All integration files MOVED** from `docs/integrations/all/[slug].mdx` to `docs/api-integrations/[slug].mdx`
 2. All integration files transformed to new format (4-step quickstart, guides section, syncs section)
-3. **All setup guide files created** at `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app.mdx` (in nested directory with title-based filename)
+3. **All setup guide files created** at `docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app.mdx` (in nested directory with title-based filename)
 4. **Connect guides checked and moved (if they exist):**
    - Check for `docs/integrations/all/[slug]/connect.mdx`
    - If exists, move to `docs/api-integrations/[slug]/connect.mdx`
@@ -1051,12 +1051,12 @@ A successful migration means:
    - Entry kept in same position within "APIs & Integrations" pages array
 6. **providers.yaml updated correctly:**
    - `docs` property updated to: `https://nango.dev/docs/api-integrations/[slug]`
-   - **For OAUTH2:** `setup_guide_url` property added/updated to: `https://nango.dev/docs/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app`
+   - **For OAUTH2:** `setup_guide_url` property added/updated to: `https://nango.dev/docs/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app`
    - **For non-OAUTH2 (API_KEY, BASIC, etc.):** `docs_connect` property added/updated to: `https://nango.dev/docs/api-integrations/[slug]/connect` (instead of setup_guide_url)
    - **For OAUTH2 with connect guide:** Also add `docs_connect` property to: `https://nango.dev/docs/api-integrations/[slug]/connect`
 7. Valid MDX syntax in all files
 8. **No broken internal links:**
-   - Main page links to setup guide: `/api-integrations/[slug]/how-to-register-your-own-[slug]-oauth-app`
+   - Main page links to setup guide: `/api-integrations/[slug]/how-to-register-your-own-[slug]-api-oauth-app`
    - Main page links to connect guide: `/api-integrations/[slug]/connect` (if it exists)
    - Main page links to syncs snippet: `/snippets/generated/[slug]/PreBuiltUseCases.mdx`
 9. Syncs/actions data accurate (or clearly marked as missing)
