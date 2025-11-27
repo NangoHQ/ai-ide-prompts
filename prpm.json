@@ -91,6 +91,40 @@
       "files": [
         ".cursor/rules/nango-zero-yaml-migration.mdc"
       ]
+    },
+    {
+      "name": "nango-docs-migrator",
+      "version": "1.0.0",
+      "description": "Migrates Nango integration documentation from old tabbed format to new simplified structure with separate guide pages and pre-built syncs sections",
+      "format": "claude",
+      "subtype": "agent",
+      "private": true,
+      "tags": [
+        "nango",
+        "documentation",
+        "migration",
+        "integration"
+      ],
+      "files": [
+        ".claude/agents/nango-docs-migrator.md"
+      ]
+    },
+    {
+      "name": "adding-nango-integration-docs",
+      "version": "1.0.1",
+      "description": "Use when adding documentation for a new Nango integration - creates main page, setup guide, and updates docs.json and providers.yaml following established patterns",
+      "format": "claude",
+      "subtype": "skill",
+      "tags": [
+        "nango",
+        "documentation",
+        "integration",
+        "api",
+        "mdx"
+      ],
+      "files": [
+        ".claude/skills/adding-nango-integration-docs/SKILL.md"
+      ]
     }
   ]
 }
