@@ -8,6 +8,7 @@ Skills and rules for Nango integration development.
 # Install all packages
 prpm install @nango/hubspot-nango-integration
 prpm install @nango/zero-yaml-migration
+prpm install @nango/adding-nango-provider-support
 prpm install @nango/agent-builder-skill
 prpm install @nango/creating-skills-skill
 prpm install @nango/slash-command-builder-skill
